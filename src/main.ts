@@ -36,4 +36,4 @@ async function bootstrap() {
   console.log(`Application started successfully, listening on port ${port}`);
 }
 
-bootstrap();
+void bootstrap();

@@ -17,7 +17,7 @@ export class ResponseUtil {
   static error(
     message: string = 'Error',
     code: number = HttpStatus.BAD_REQUEST,
-    data: any = null,
+    data: unknown = null,
   ) {
     return {
       code,

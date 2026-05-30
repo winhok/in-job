@@ -5,6 +5,7 @@ import {
   CallHandler,
   HttpStatus,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
@@ -23,20 +24,19 @@ export class ResponseInterceptor<T> implements NestInterceptor<
 > {
   intercept(
     context: ExecutionContext,
-    next: CallHandler,
+    next: CallHandler<T>,
   ): Observable<ResponseFormat<T>> {
     const ctx = context.switchToHttp();
-    const response = ctx.getResponse();
-    const request = ctx.getRequest();
+    const request = ctx.getRequest<Request>();
 
     return next.handle().pipe(
-      map((data) => {
+      map((data: T): ResponseFormat<T> => {
         // empty data
         if (data === null || data === undefined) {
           return {
             code: HttpStatus.OK,
             message: 'Success',
-            data: null,
+            data: null as T,
             timestamp: new Date().toISOString(),
             path: request.url,
           };
@@ -49,7 +49,7 @@ export class ResponseInterceptor<T> implements NestInterceptor<
           'message' in data
         ) {
           return {
-            ...data,
+            ...(data as unknown as ResponseFormat<T>),
             timestamp: new Date().toISOString(),
             path: request.url,
           };

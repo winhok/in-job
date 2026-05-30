@@ -18,8 +18,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const request = ctx.getRequest<Request>();
 
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
-    let message = 'Internal server error';
-    let error: any = null;
+    let message: string | string[] = 'Internal server error';
+    let error: string | null = null;
 
     // Handle HttpException
     if (exception instanceof HttpException) {
@@ -29,9 +29,12 @@ export class AllExceptionsFilter implements ExceptionFilter {
       if (typeof exceptionResponse === 'string') {
         message = exceptionResponse;
       } else if (typeof exceptionResponse === 'object') {
-        const responseObj = exceptionResponse as any;
-        message = responseObj.message || 'Request failed';
-        error = responseObj.error || null;
+        const responseObj = exceptionResponse as {
+          message?: string | string[];
+          error?: string;
+        };
+        message = responseObj.message ?? 'Request failed';
+        error = responseObj.error ?? null;
       }
     }
     // Handle other exceptions
@@ -45,14 +48,15 @@ export class AllExceptionsFilter implements ExceptionFilter {
     }
 
     // Log the error
+    const messageText = Array.isArray(message) ? message[0] : message;
     this.logger.error(
-      `${request.method} ${request.url} - ${status} - ${message}`,
+      `${request.method} ${request.url} - ${status} - ${messageText}`,
     );
 
     // Return the unified error response format
     const errorResponse = {
       code: status,
-      message: Array.isArray(message) ? message[0] : message,
+      message: messageText,
       data: null,
       timestamp: new Date().toISOString(),
       path: request.url,

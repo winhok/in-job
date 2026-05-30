@@ -7,6 +7,7 @@ import {
   Request,
   Put,
 } from '@nestjs/common';
+import { Request as ExpressRequest } from 'express';
 import { UserService } from './user.service';
 import { RegisterDto } from './dto/register.dto';
 import { ResponseUtil } from '../common/utils/response.util';
@@ -14,6 +15,10 @@ import { LoginDto } from './dto/login.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Public } from '../auth/public.decorator';
 import { UpdateUserDto } from './dto/update-user.dto';
+
+interface AuthenticatedRequest extends ExpressRequest {
+  user: { userId: string; username: string; email?: string };
+}
 
 @Controller('user')
 @UseGuards(JwtAuthGuard) // 使用认证守卫
@@ -35,7 +40,7 @@ export class UserController {
   }
 
   @Get('info')
-  async getUserInfo(@Request() req: any) {
+  async getUserInfo(@Request() req: AuthenticatedRequest) {
     const { userId } = req.user;
     const userInfo = await this.userService.getUserInfo(userId);
     return ResponseUtil.success(userInfo, 'Query Success');
@@ -43,7 +48,7 @@ export class UserController {
 
   @Put('profile')
   async updateUserProfile(
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
     @Body() updateUserDto: UpdateUserDto,
   ) {
     const { userId } = req.user;

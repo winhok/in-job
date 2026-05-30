@@ -23,10 +23,14 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     return super.canActivate(context);
   }
 
-  handleRequest(err, user, info: any) {
+  handleRequest<TUser = unknown>(
+    err: unknown,
+    user: TUser,
+    info: { message?: string; name?: string } | undefined,
+  ): TUser {
     if (err || !user) {
-      const errorMessage = info?.message || 'Invalid Token';
-      const errorName = info?.name || 'UnknownError';
+      const errorMessage = info?.message ?? 'Invalid Token';
+      const errorName = info?.name ?? 'UnknownError';
 
       let friendlyMessage = errorMessage;
       if (errorName === 'JsonWebTokenError') {

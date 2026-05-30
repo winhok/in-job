@@ -45,7 +45,7 @@ import { getTokenExpirationSeconds } from './common/utils/jwt.util';
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => {
+      useFactory: (configService: ConfigService) => {
         const expirationSeconds = getTokenExpirationSeconds();
         return {
           secret: configService.get<string>('JWT_SECRET') || 'wwzhidao-secret',

@@ -38,7 +38,11 @@ UserSchema.pre('save', async function () {
 
 // 添加比较密码的方法
 UserSchema.methods.comparePassword = async function (
+  this: UserDocument,
   candidatePassword: string,
 ): Promise<boolean> {
+  if (!this.password) {
+    return false;
+  }
   return bcrypt.compare(candidatePassword, this.password);
 };
