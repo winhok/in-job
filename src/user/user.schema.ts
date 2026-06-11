@@ -12,14 +12,44 @@ export class User {
   @Prop({ required: true })
   username!: string;
 
-  @Prop({ required: false })
-  email?: string;
-
   @Prop()
   password?: string;
 
   @Prop()
   avatar?: string;
+
+  @Prop({ default: ['user'] })
+  roles!: string[];
+
+  @Prop({ default: false })
+  isActive!: boolean;
+
+  @Prop({ required: false })
+  wechatId?: string;
+
+  @Prop({ unique: true, sparse: true })
+  openid?: string;
+
+  @Prop({ unique: true, sparse: true })
+  unionid?: string;
+
+  @Prop()
+  wechatNickname?: string;
+
+  @Prop()
+  wechatAvatar?: string;
+
+  @Prop({ default: false })
+  isWechatBound!: boolean;
+
+  @Prop()
+  wechatBoundTime?: Date;
+
+  @Prop({ required: false })
+  phone?: string;
+
+  @Prop({ required: false })
+  email?: string;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
