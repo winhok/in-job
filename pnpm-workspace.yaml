@@ -1,7 +1,14 @@
+packages:
+  - "apps/*"
+  - "server"
+
 allowBuilds:
   '@nestjs/core': true
+  '@parcel/watcher': true
   '@scarf/scarf': true
+  esbuild: true
   unrs-resolver: true
+  vue-demi: true
 verifyDepsBeforeRun: false
 minimumReleaseAgeExclude:
   - '@eslint/plugin-kit@0.7.2'
