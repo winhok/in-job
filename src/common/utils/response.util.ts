@@ -1,9 +1,12 @@
 import { HttpStatus } from '@nestjs/common';
 
 export class ResponseUtil {
-  static success<T = any>(
+  /**
+   * 构建成功响应
+   */
+  static success<T = unknown>(
     data: T,
-    message: string = 'Success',
+    message: string = '操作成功',
     code: number = HttpStatus.OK,
   ) {
     return {
@@ -14,8 +17,11 @@ export class ResponseUtil {
     };
   }
 
+  /**
+   * 构建错误响应
+   */
   static error(
-    message: string = 'Error',
+    message: string = '操作失败',
     code: number = HttpStatus.BAD_REQUEST,
     data: unknown = null,
   ) {
@@ -27,7 +33,10 @@ export class ResponseUtil {
     };
   }
 
-  static paginated<T = any>(
+  /**
+   * 构建分页响应
+   */
+  static paginated<T = unknown>(
     data: T[],
     pagination: {
       page: number;
@@ -35,7 +44,7 @@ export class ResponseUtil {
       total: number;
       totalPages: number;
     },
-    message: string = 'Query Success',
+    message: string = '查询成功',
     code: number = HttpStatus.OK,
   ) {
     return {
@@ -47,9 +56,12 @@ export class ResponseUtil {
     };
   }
 
-  static list<T = any>(
+  /**
+   * 构建列表响应
+   */
+  static list<T = unknown>(
     data: T[],
-    message: string = 'Query Success',
+    message: string = '查询成功',
     code: number = HttpStatus.OK,
   ) {
     return {
@@ -60,7 +72,10 @@ export class ResponseUtil {
     };
   }
 
-  static empty(message: string = 'No Content', code: number = HttpStatus.OK) {
+  /**
+   * 构建空响应
+   */
+  static empty(message: string = '暂无数据', code: number = HttpStatus.OK) {
     return {
       code,
       message,

@@ -1,8 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { UserService } from './user.service';
 import { getModelToken } from '@nestjs/mongoose';
 import { JwtService } from '@nestjs/jwt';
-import { UserService } from './user.service';
-import { User } from './user.schema';
+import { User } from './schemas/user.schema';
+import { ConsumptionRecord } from '../interview/schemas/consumption-record.schema';
+import { UserConsumption } from './schemas/consumption-record.schema';
 
 describe('UserService', () => {
   let service: UserService;
@@ -11,8 +13,22 @@ describe('UserService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UserService,
-        { provide: getModelToken(User.name), useValue: {} },
-        { provide: JwtService, useValue: { sign: jest.fn() } },
+        {
+          provide: getModelToken(User.name),
+          useValue: {},
+        },
+        {
+          provide: getModelToken(ConsumptionRecord.name),
+          useValue: {},
+        },
+        {
+          provide: getModelToken(UserConsumption.name),
+          useValue: {},
+        },
+        {
+          provide: JwtService,
+          useValue: {},
+        },
       ],
     }).compile();
 

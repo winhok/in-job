@@ -8,6 +8,11 @@ import {
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 
+interface HttpErrorResponse {
+  message?: string | string[];
+  error?: string;
+}
+
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
   private readonly logger = new Logger(AllExceptionsFilter.name);
@@ -18,10 +23,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const request = ctx.getRequest<Request>();
 
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
-    let message: string | string[] = 'Internal server error';
+    let message: string | string[] = '服务器内部错误';
     let error: string | null = null;
 
-    // Handle HttpException
+    // 处理 HttpException
     if (exception instanceof HttpException) {
       status = exception.getStatus();
       const exceptionResponse = exception.getResponse();
@@ -29,38 +34,35 @@ export class AllExceptionsFilter implements ExceptionFilter {
       if (typeof exceptionResponse === 'string') {
         message = exceptionResponse;
       } else if (typeof exceptionResponse === 'object') {
-        const responseObj = exceptionResponse as {
-          message?: string | string[];
-          error?: string;
-        };
-        message = responseObj.message ?? 'Request failed';
+        const responseObj = exceptionResponse as HttpErrorResponse;
+        message = responseObj.message ?? '请求失败';
         error = responseObj.error ?? null;
       }
     }
-    // Handle other exceptions
+    // 处理其他异常
     else if (exception instanceof Error) {
-      message = exception.message || 'Internal server error';
+      message = exception.message || '服务器内部错误';
       this.logger.error(
-        `Unhandled exception: ${exception.message}`,
+        `未处理的异常: ${exception.message}`,
         exception.stack,
         'AllExceptionsFilter',
       );
     }
 
-    // Log the error
+    // 记录错误日志
     const messageText = Array.isArray(message) ? message[0] : message;
     this.logger.error(
       `${request.method} ${request.url} - ${status} - ${messageText}`,
     );
 
-    // Return the unified error response format
+    // 返回统一格式的错误响应
     const errorResponse = {
       code: status,
       message: messageText,
       data: null,
       timestamp: new Date().toISOString(),
       path: request.url,
-      ...(error && { error }),
+      ...(error !== null && { error }),
     };
 
     response.status(status).json(errorResponse);

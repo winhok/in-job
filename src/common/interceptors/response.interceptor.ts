@@ -5,11 +5,11 @@ import {
   CallHandler,
   HttpStatus,
 } from '@nestjs/common';
-import { Request } from 'express';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { Request } from 'express';
 
-export interface ResponseFormat<T = any> {
+export interface ResponseFormat<T = unknown> {
   code: number;
   message: string;
   data: T;
@@ -17,48 +17,55 @@ export interface ResponseFormat<T = any> {
   path: string;
 }
 
+function isResponseFormat<T>(value: T): value is T & ResponseFormat<T> {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  const candidate = value as Partial<ResponseFormat<T>>;
+  return (
+    typeof candidate.code === 'number' && typeof candidate.message === 'string'
+  );
+}
+
 @Injectable()
 export class ResponseInterceptor<T> implements NestInterceptor<
   T,
-  ResponseFormat<T>
+  ResponseFormat<T | null>
 > {
   intercept(
     context: ExecutionContext,
     next: CallHandler<T>,
-  ): Observable<ResponseFormat<T>> {
+  ): Observable<ResponseFormat<T | null>> {
     const ctx = context.switchToHttp();
     const request = ctx.getRequest<Request>();
 
     return next.handle().pipe(
-      map((data: T): ResponseFormat<T> => {
-        // empty data
+      map((data: T): ResponseFormat<T | null> => {
+        // 处理空数据
         if (data === null || data === undefined) {
           return {
             code: HttpStatus.OK,
-            message: 'Success',
-            data: null as T,
-            timestamp: new Date().toISOString(),
-            path: request.url,
-          };
-        }
-        // already in the standard format, pass it through
-        if (
-          data &&
-          typeof data === 'object' &&
-          'code' in data &&
-          'message' in data
-        ) {
-          return {
-            ...(data as unknown as ResponseFormat<T>),
+            message: '操作成功',
+            data: null,
             timestamp: new Date().toISOString(),
             path: request.url,
           };
         }
 
-        // standard success response format
+        // 如果返回的数据已经是标准格式，直接返回
+        if (isResponseFormat(data)) {
+          return {
+            ...data,
+            timestamp: new Date().toISOString(),
+            path: request.url,
+          };
+        }
+
+        // 标准成功响应格式
         return {
           code: HttpStatus.OK,
-          message: 'Success',
+          message: '操作成功',
           data: data,
           timestamp: new Date().toISOString(),
           path: request.url,
