@@ -6,6 +6,7 @@ import {
   UseGuards,
   Res,
   Param,
+  Get,
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -192,6 +193,33 @@ export class InterviewController {
   ) {
     await this.interviewService.endMockInterview(req.user.userId, resultId);
     return ResponseUtil.success({ resultId }, '面试已结束，正在生成分析报告');
+  }
+
+  /** 根据结果 ID 获取简历押题或模拟面试分析报告。 */
+  @Get('analysis/report/:resultId')
+  @UseGuards(JwtAuthGuard)
+  async getAnalysisReport(
+    @Param('resultId') resultId: string,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    const report = await this.interviewService.getAnalysisReport(
+      req.user.userId,
+      resultId,
+    );
+    return ResponseUtil.success(report, '查询成功');
+  }
+
+  @Post('analysis/report/:resultId/regenerate')
+  @UseGuards(JwtAuthGuard)
+  async regenerateReport(
+    @Param('resultId') resultId: string,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    await this.interviewService.regenerateAssessmentReport(
+      req.user.userId,
+      resultId,
+    );
+    return ResponseUtil.success({}, '正在重新生成报告');
   }
 
   private prepareSseResponse(res: Response): void {

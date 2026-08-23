@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { RunnableLambda } from '@langchain/core/runnables';
 import { InterviewAIService } from './interview-ai.service';
 
 describe('InterviewAIService mock interview copy', () => {
@@ -35,5 +36,73 @@ describe('InterviewAIService mock interview copy', () => {
     expect(closing).toContain('小王');
     expect(closing).toContain('3-5个工作日');
     expect(closing).toContain('张老师');
+  });
+});
+
+describe('InterviewAIService assessment report', () => {
+  const context = {
+    interviewType: 'special' as const,
+    company: '示例公司',
+    positionName: '前端开发工程师',
+    jd: '要求熟悉 TypeScript 和性能优化',
+    resumeContent: '三年前端开发经验',
+    qaList: [
+      {
+        question: '如何定位页面性能问题？',
+        answer: '先采集指标，再使用 Performance 面板定位瓶颈。',
+        standardAnswer: '建立基线、定位瓶颈、实施优化并验证。',
+      },
+    ],
+  };
+
+  function createService(result: Record<string, unknown>) {
+    const model = RunnableLambda.from(() => JSON.stringify(result));
+    return new InterviewAIService({
+      createDefaultModel: () => model,
+    } as never);
+  }
+
+  it('解析并返回结构完整的评估结果', async () => {
+    const expected = {
+      overallScore: 82,
+      overallLevel: '良好',
+      overallComment: '技术基础扎实',
+      radarData: [{ dimension: '技术能力', score: 84 }],
+      strengths: ['基础扎实'],
+      weaknesses: ['架构经验不足'],
+      improvements: [
+        {
+          category: '架构能力',
+          suggestion: '补充系统设计实践',
+          priority: 'high',
+        },
+      ],
+      fluencyScore: 80,
+      logicScore: 82,
+      professionalScore: 84,
+    };
+
+    await expect(
+      createService(expected).generateInterviewAssessmentReport(context),
+    ).resolves.toEqual(expected);
+  });
+
+  it('拒绝持久化越界的 AI 分数', async () => {
+    const invalid = {
+      overallScore: 120,
+      overallLevel: '优秀',
+      overallComment: '不可信的高分',
+      radarData: [],
+      strengths: [],
+      weaknesses: [],
+      improvements: [],
+      fluencyScore: 80,
+      logicScore: 80,
+      professionalScore: 80,
+    };
+
+    await expect(
+      createService(invalid).generateInterviewAssessmentReport(context),
+    ).rejects.toThrow('AI返回的评估分数或综合评价格式不正确');
   });
 });

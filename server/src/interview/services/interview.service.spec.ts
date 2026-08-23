@@ -15,6 +15,7 @@ import {
   QuestionDifficulty,
 } from '../schemas/interview-quiz-result.schema';
 import { InterviewService, ProgressEvent } from './interview.service';
+import { ReportStatus } from '../dto/analysis-report.dto';
 
 describe('InterviewService resume quiz', () => {
   const userId = '507f1f77bcf86cd799439011';
@@ -277,6 +278,18 @@ describe('InterviewService mock interview lifecycle', () => {
         };
       },
       generateClosingStatement: vi.fn(() => '感谢参与，面试结束。'),
+      generateInterviewAssessmentReport: vi.fn().mockResolvedValue({
+        overallScore: 80,
+        overallLevel: '良好',
+        overallComment: '面试表现良好',
+        radarData: [],
+        strengths: [],
+        weaknesses: [],
+        improvements: [],
+        fluencyScore: 80,
+        logicScore: 80,
+        professionalScore: 80,
+      }),
     };
     const service = new InterviewService(
       {} as never,
@@ -349,5 +362,290 @@ describe('InterviewService mock interview lifecycle', () => {
     await service.endMockInterview(userId, startEvent!.resultId!);
     expect(record.status).toBe('completed');
     expect(record.sessionState?.isActive).toBe(false);
+    await vi.waitFor(() => expect(record.reportStatus).toBe('completed'));
+  });
+});
+
+describe('InterviewService analysis reports', () => {
+  const userId = '507f1f77bcf86cd799439011';
+
+  interface MutableReport extends Record<string, unknown> {
+    _id?: string;
+    resultId: string;
+    userId: string;
+    reportStatus?: string;
+    viewCount?: number;
+    overallScore?: number;
+    reportError?: string;
+  }
+
+  interface ReportQuery {
+    resultId?: string;
+    userId?: string;
+    reportStatus?: string | { $in: string[] };
+  }
+
+  interface ReportUpdate {
+    $set?: Record<string, unknown>;
+    $inc?: Record<string, number>;
+    $unset?: Record<string, unknown>;
+  }
+
+  function createReportService(options?: {
+    resumeResult?: MutableReport | null;
+    interviewResult?: MutableReport | null;
+    assessment?: Record<string, unknown>;
+    assessmentError?: Error;
+  }) {
+    const resumeResult = options?.resumeResult ?? null;
+    const interviewResult = options?.interviewResult ?? null;
+    const matches = (record: MutableReport | null, query: ReportQuery) => {
+      if (!record) return false;
+      if (query.resultId && record.resultId !== query.resultId) return false;
+      if (query.userId && record.userId !== query.userId) return false;
+      if (typeof query.reportStatus === 'string') {
+        return record.reportStatus === query.reportStatus;
+      }
+      if (query.reportStatus?.$in) {
+        return query.reportStatus.$in.includes(record.reportStatus);
+      }
+      return true;
+    };
+    const applyUpdate = (record: MutableReport, update: ReportUpdate) => {
+      Object.assign(record, update.$set || {});
+      for (const [field, amount] of Object.entries(update.$inc || {})) {
+        const current = record[field];
+        record[field] = (typeof current === 'number' ? current : 0) + amount;
+      }
+      for (const field of Object.keys(update.$unset || {})) {
+        delete record[field];
+      }
+    };
+    const resumeQuizResultModel = {
+      findOne: vi.fn((query: ReportQuery) =>
+        Promise.resolve(matches(resumeResult, query) ? resumeResult : null),
+      ),
+      findByIdAndUpdate: vi.fn((_id: unknown, update: ReportUpdate) => {
+        if (resumeResult) applyUpdate(resumeResult, update);
+        return Promise.resolve(resumeResult);
+      }),
+    };
+    const aiInterviewResultModel = {
+      findOne: vi.fn((query: ReportQuery) =>
+        Promise.resolve(
+          matches(interviewResult, query) ? interviewResult : null,
+        ),
+      ),
+      findOneAndUpdate: vi.fn((query: ReportQuery, update: ReportUpdate) => {
+        if (!matches(interviewResult, query)) return Promise.resolve(null);
+        applyUpdate(interviewResult!, update);
+        return Promise.resolve(interviewResult);
+      }),
+    };
+    const aiService = {
+      generateInterviewAssessmentReport: options?.assessmentError
+        ? vi.fn().mockRejectedValue(options.assessmentError)
+        : vi.fn().mockResolvedValue(
+            options?.assessment || {
+              overallScore: 82,
+              overallLevel: '良好',
+              overallComment: '技术基础扎实，表达清晰。',
+              radarData: [
+                { dimension: '技术能力', score: 84, description: '基础扎实' },
+              ],
+              strengths: ['技术基础扎实'],
+              weaknesses: ['系统设计经验不足'],
+              improvements: [
+                {
+                  category: '架构能力',
+                  suggestion: '补充系统设计实践',
+                  priority: 'high',
+                },
+              ],
+              fluencyScore: 80,
+              logicScore: 83,
+              professionalScore: 84,
+            },
+          ),
+    };
+    const service = new InterviewService(
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      aiService as never,
+      {} as never,
+      resumeQuizResultModel as never,
+      aiInterviewResultModel as never,
+      {} as never,
+    );
+    return {
+      service,
+      resumeQuizResultModel,
+      aiInterviewResultModel,
+      aiService,
+      interviewResult,
+    };
+  }
+
+  it('格式化简历押题报告并原子增加查看次数', async () => {
+    const resumeResult: MutableReport = {
+      _id: 'resume-id',
+      resultId: 'resume-result',
+      userId,
+      company: '示例公司',
+      position: '前端开发工程师',
+      questions: [{ question: 'Vue 原理' }],
+      viewCount: 2,
+      createdAt: new Date('2026-08-20T00:00:00.000Z'),
+    };
+    const { service, resumeQuizResultModel } = createReportService({
+      resumeResult,
+    });
+
+    const report = (await service.getAnalysisReport(
+      userId,
+      'resume-result',
+    )) as Record<string, unknown>;
+
+    expect(report).toMatchObject({
+      resultId: 'resume-result',
+      type: 'resume_quiz',
+      matchScore: 0,
+      totalQuestions: 1,
+      viewCount: 3,
+    });
+    expect(resumeQuizResultModel.findByIdAndUpdate).toHaveBeenCalledWith(
+      'resume-id',
+      expect.objectContaining({ $inc: { viewCount: 1 } }),
+      { new: true },
+    );
+  });
+
+  it('待生成报告在查询时异步生成，完成后返回脱敏结构', async () => {
+    const interviewResult: MutableReport = {
+      resultId: 'mock-result',
+      userId,
+      interviewType: 'special',
+      company: '示例公司',
+      position: '前端开发工程师',
+      reportStatus: ReportStatus.PENDING,
+      viewCount: 0,
+      totalQuestions: 1,
+      answeredQuestions: 1,
+      qaList: [
+        {
+          question: '介绍一次性能优化',
+          answer: '我先建立性能基线，再定位瓶颈并验证优化收益。',
+          standardAnswer: '说明指标、定位、措施和结果。',
+        },
+      ],
+      sessionState: { resumeContent: '三年前端开发经验' },
+    };
+    const { service, aiService } = createReportService({ interviewResult });
+
+    await expect(
+      service.getAnalysisReport(userId, 'mock-result'),
+    ).rejects.toThrow('评估报告正在生成中');
+    await vi.waitFor(() => {
+      expect(interviewResult.reportStatus).toBe(ReportStatus.COMPLETED);
+    });
+
+    const report = (await service.getAnalysisReport(
+      userId,
+      'mock-result',
+    )) as Record<string, unknown>;
+    expect(aiService.generateInterviewAssessmentReport).toHaveBeenCalledTimes(
+      1,
+    );
+    expect(report).toMatchObject({
+      resultId: 'mock-result',
+      type: 'special_interview',
+      overallScore: 82,
+      viewCount: 1,
+    });
+    expect(report).not.toHaveProperty('sessionState');
+    expect(report).not.toHaveProperty('userId');
+  });
+
+  it('并发重新生成只会认领一次 AI 任务', async () => {
+    const interviewResult: MutableReport = {
+      resultId: 'retry-result',
+      userId,
+      interviewType: 'behavior',
+      reportStatus: ReportStatus.FAILED,
+      qaList: [
+        { question: '如何处理冲突', answer: '先对齐目标，再讨论方案。' },
+      ],
+    };
+    const { service, aiService } = createReportService({ interviewResult });
+
+    await Promise.all([
+      service.regenerateAssessmentReport(userId, 'retry-result'),
+      service.regenerateAssessmentReport(userId, 'retry-result'),
+    ]);
+    await vi.waitFor(() => {
+      expect(interviewResult.reportStatus).toBe(ReportStatus.COMPLETED);
+    });
+    expect(aiService.generateInterviewAssessmentReport).toHaveBeenCalledTimes(
+      1,
+    );
+  });
+
+  it('无有效回答时直接生成默认低分报告', async () => {
+    const interviewResult: MutableReport = {
+      resultId: 'empty-result',
+      userId,
+      interviewType: 'special',
+      reportStatus: ReportStatus.PENDING,
+      qaList: [{ question: '请自我介绍', answer: '   ' }],
+    };
+    const { service, aiService } = createReportService({ interviewResult });
+
+    await service.regenerateAssessmentReport(userId, 'empty-result');
+    await vi.waitFor(() => {
+      expect(interviewResult.reportStatus).toBe(ReportStatus.COMPLETED);
+    });
+    expect(interviewResult.overallScore).toBe(30);
+    expect(aiService.generateInterviewAssessmentReport).not.toHaveBeenCalled();
+  });
+
+  it('AI 失败时保存失败状态并允许后续重试', async () => {
+    const interviewResult: MutableReport = {
+      resultId: 'failed-result',
+      userId,
+      interviewType: 'special',
+      reportStatus: ReportStatus.PENDING,
+      qaList: [
+        { question: '解释事件循环', answer: '宏任务与微任务按规则调度。' },
+      ],
+    };
+    const { service } = createReportService({
+      interviewResult,
+      assessmentError: new Error('model unavailable'),
+    });
+
+    await service.regenerateAssessmentReport(userId, 'failed-result');
+    await vi.waitFor(() => {
+      expect(interviewResult.reportStatus).toBe(ReportStatus.FAILED);
+    });
+    expect(interviewResult.reportError).toBe('model unavailable');
+  });
+
+  it('其他用户的结果按不存在处理', async () => {
+    const { service } = createReportService({
+      interviewResult: {
+        resultId: 'private-result',
+        userId: 'another-user',
+        reportStatus: ReportStatus.COMPLETED,
+      },
+    });
+
+    await expect(
+      service.getAnalysisReport(userId, 'private-result'),
+    ).rejects.toThrow('未找到该分析报告');
+    await expect(
+      service.regenerateAssessmentReport(userId, 'private-result'),
+    ).rejects.toThrow('未找到该分析报告');
   });
 });

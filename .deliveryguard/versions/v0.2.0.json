@@ -1,0 +1,36 @@
+{
+  "$schema": "https://raw.githubusercontent.com/wzf1997/delivery-harness/main/schemas/version.schema.json",
+  "schemaVersion": 1,
+  "version": "v0.2.0",
+  "title": "异步评估报告生成",
+  "documents": [
+    {
+      "id": "assessment-report-requirement",
+      "type": "product-requirement",
+      "title": "异步评估报告生成",
+      "ref": "openspec/changes/assessment-report-generation/proposal.md",
+      "primary": true,
+      "revision": 1
+    },
+    {
+      "id": "assessment-report-design",
+      "type": "technical-design",
+      "title": "异步评估报告技术设计",
+      "ref": "openspec/changes/assessment-report-generation/design.md",
+      "revision": 1
+    }
+  ],
+  "openSpec": {
+    "changeId": "assessment-report-generation",
+    "path": "openspec/changes/assessment-report-generation",
+    "status": "applied"
+  },
+  "sources": [],
+  "acceptance": {
+    "status": "pending"
+  },
+  "deployments": [],
+  "release": {
+    "status": "pending"
+  }
+}

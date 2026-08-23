@@ -11,6 +11,10 @@ import { ReplaySubject, Subject } from 'rxjs';
 import { SessionManager } from '../../ai/services/session.manager';
 import { User, UserDocument } from '../../user/schemas/user.schema';
 import { ResumeQuizDto } from '../dto/resume-quiz.dto';
+import {
+  ReportStatus,
+  ResumeQuizAnalysisDto,
+} from '../dto/analysis-report.dto';
 import { RESUME_ANALYSIS_SYSTEM_MESSAGE } from '../prompts/resume-analysis.prompts';
 import {
   ConsumptionRecord,
@@ -128,6 +132,62 @@ export class InterviewService {
       this.logger.error(`继续对话失败: ${this.getErrorMessage(error)}`);
       throw error;
     }
+  }
+
+  /** 根据结果 ID 自动识别简历押题或模拟面试报告。 */
+  async getAnalysisReport(userId: string, resultId: string): Promise<unknown> {
+    const resumeQuizResult = await this.resumeQuizResultModel.findOne({
+      resultId,
+      userId,
+    });
+    if (resumeQuizResult) {
+      return this.generateResumeQuizAnalysis(resumeQuizResult);
+    }
+
+    const aiInterviewResult = await this.aiInterviewResultModel.findOne({
+      resultId,
+      userId,
+    });
+    if (!aiInterviewResult) throw new NotFoundException('未找到该分析报告');
+
+    const reportStatus =
+      (aiInterviewResult.reportStatus as ReportStatus | undefined) ??
+      ReportStatus.PENDING;
+    if (
+      reportStatus === ReportStatus.PENDING ||
+      reportStatus === ReportStatus.FAILED
+    ) {
+      this.triggerAssessmentReportGeneration(userId, resultId);
+    }
+    if (reportStatus !== ReportStatus.COMPLETED) {
+      throw new BadRequestException(
+        '评估报告正在生成中，请稍后再试（预计1-2分钟）',
+      );
+    }
+
+    const viewedResult = await this.aiInterviewResultModel.findOneAndUpdate(
+      { resultId, userId, reportStatus: ReportStatus.COMPLETED },
+      { $inc: { viewCount: 1 }, $set: { lastViewedAt: new Date() } },
+      { new: true },
+    );
+    if (!viewedResult) throw new NotFoundException('未找到该分析报告');
+    return this.formatAIInterviewAnalysis(viewedResult);
+  }
+
+  /** 重新触发待生成或失败的模拟面试报告。 */
+  async regenerateAssessmentReport(
+    userId: string,
+    resultId: string,
+  ): Promise<void> {
+    const result = await this.aiInterviewResultModel.findOne({
+      resultId,
+      userId,
+    });
+    if (!result) throw new NotFoundException('未找到该分析报告');
+    if ((result.reportStatus as ReportStatus) === ReportStatus.COMPLETED) {
+      throw new BadRequestException('评估报告已经生成完成');
+    }
+    this.triggerAssessmentReportGeneration(userId, resultId);
   }
 
   generateResumeQuizWithProgress(
@@ -309,6 +369,268 @@ export class InterviewService {
     await this.saveMockInterviewResult(session);
     this.interviewSessions.delete(session.sessionId);
     this.sessionsProcessingAnswer.delete(session.sessionId);
+  }
+
+  private triggerAssessmentReportGeneration(
+    userId: string,
+    resultId: string,
+  ): void {
+    void this.generateAssessmentReportAsync(userId, resultId).catch(
+      (error: unknown) => {
+        this.logger.error(
+          `后台评估报告任务失败: resultId=${resultId}, error=${this.getErrorMessage(error)}`,
+        );
+      },
+    );
+  }
+
+  /**
+   * 原子认领并异步生成模拟面试评估报告。
+   * 同一结果只有从 pending/failed 成功切换到 generating 的调用方会执行 AI 请求。
+   */
+  private async generateAssessmentReportAsync(
+    userId: string,
+    resultId: string,
+  ): Promise<void> {
+    try {
+      const dbResult = await this.aiInterviewResultModel.findOneAndUpdate(
+        {
+          resultId,
+          userId,
+          reportStatus: {
+            $in: [ReportStatus.PENDING, ReportStatus.FAILED],
+          },
+        },
+        {
+          $set: { reportStatus: ReportStatus.GENERATING },
+          $unset: { reportError: 1 },
+        },
+        { new: true },
+      );
+
+      if (!dbResult) {
+        const existing = await this.aiInterviewResultModel.findOne({
+          resultId,
+          userId,
+        });
+        if (!existing) {
+          throw new NotFoundException(`未找到面试记录: ${resultId}`);
+        }
+        this.logger.log(`评估报告无需重复生成: resultId=${resultId}`);
+        return;
+      }
+
+      const qaList = (dbResult.qaList || [])
+        .filter(
+          (qa) =>
+            typeof qa?.question === 'string' &&
+            qa.question.trim() !== '' &&
+            qa.question !== '[生成中...]' &&
+            typeof qa.answer === 'string' &&
+            qa.answer.trim() !== '',
+        )
+        .map((qa) => ({
+          question: qa.question.trim(),
+          answer: qa.answer.trim(),
+          standardAnswer: qa.standardAnswer?.trim() || undefined,
+        }));
+
+      this.logger.log(
+        `开始异步生成评估报告: resultId=${resultId}, qaCount=${qaList.length}`,
+      );
+      if (qaList.length === 0) {
+        await this.saveEmptyAnswerAssessment(userId, resultId);
+        return;
+      }
+
+      const totalAnswerLength = qaList.reduce(
+        (sum, qa) => sum + qa.answer.length,
+        0,
+      );
+      const avgAnswerLength = Math.round(totalAnswerLength / qaList.length);
+      const emptyAnswersCount = qaList.filter(
+        (qa) => qa.answer.length < 10,
+      ).length;
+      const assessment = await this.aiService.generateInterviewAssessmentReport(
+        {
+          interviewType:
+            dbResult.interviewType === AIInterviewType.SPECIAL
+              ? 'special'
+              : 'comprehensive',
+          company: dbResult.company || '',
+          positionName: dbResult.position || '',
+          jd: dbResult.jobDescription || '',
+          resumeContent: this.getResumeContentFromSessionState(
+            dbResult.sessionState,
+          ),
+          qaList,
+          answerQualityMetrics: {
+            totalQuestions: qaList.length,
+            avgAnswerLength,
+            emptyAnswersCount,
+          },
+        },
+      );
+
+      await this.aiInterviewResultModel.findOneAndUpdate(
+        {
+          resultId,
+          userId,
+          reportStatus: ReportStatus.GENERATING,
+        },
+        {
+          $set: {
+            ...assessment,
+            reportStatus: ReportStatus.COMPLETED,
+            reportGeneratedAt: new Date(),
+          },
+          $unset: { reportError: 1 },
+        },
+      );
+      this.logger.log(
+        `评估报告生成成功: resultId=${resultId}, overallScore=${assessment.overallScore}`,
+      );
+    } catch (error) {
+      const message = this.getErrorMessage(error);
+      await this.aiInterviewResultModel.findOneAndUpdate(
+        {
+          resultId,
+          userId,
+          reportStatus: ReportStatus.GENERATING,
+        },
+        {
+          $set: {
+            reportStatus: ReportStatus.FAILED,
+            reportError: message,
+          },
+        },
+      );
+      throw error;
+    }
+  }
+
+  private async saveEmptyAnswerAssessment(
+    userId: string,
+    resultId: string,
+  ): Promise<void> {
+    await this.aiInterviewResultModel.findOneAndUpdate(
+      { resultId, userId, reportStatus: ReportStatus.GENERATING },
+      {
+        $set: {
+          overallScore: 30,
+          overallLevel: '需提升',
+          overallComment:
+            '本次面试未能有效进行，候选人没有回答任何问题，无法评估专业能力。建议重新安排面试。',
+          radarData: [
+            { dimension: '技术能力', score: 0, description: '未评估' },
+            { dimension: '项目经验', score: 0, description: '未评估' },
+            { dimension: '问题解决', score: 0, description: '未评估' },
+            { dimension: '学习能力', score: 0, description: '未评估' },
+            { dimension: '沟通表达', score: 0, description: '未评估' },
+          ],
+          strengths: [],
+          weaknesses: ['未参与面试问答', '无法评估专业能力'],
+          improvements: [
+            {
+              category: '面试准备',
+              suggestion: '建议充分准备后重新参加面试',
+              priority: 'high',
+            },
+          ],
+          fluencyScore: 0,
+          logicScore: 0,
+          professionalScore: 0,
+          reportStatus: ReportStatus.COMPLETED,
+          reportGeneratedAt: new Date(),
+        },
+        $unset: { reportError: 1 },
+      },
+    );
+    this.logger.log(`默认低分报告已生成: resultId=${resultId}`);
+  }
+
+  private async generateResumeQuizAnalysis(
+    result: ResumeQuizResultDocument,
+  ): Promise<ResumeQuizAnalysisDto> {
+    const viewedResult = await this.resumeQuizResultModel.findByIdAndUpdate(
+      result._id,
+      {
+        $inc: { viewCount: 1 },
+        $set: { lastViewedAt: new Date() },
+      },
+      { new: true },
+    );
+    const createdAt = this.getDocumentDate(result, 'createdAt');
+    return {
+      resultId: result.resultId,
+      type: 'resume_quiz',
+      company: result.company || '',
+      position: result.position,
+      salaryRange: result.salaryRange,
+      createdAt,
+      matchScore: result.matchScore ?? 0,
+      matchLevel: result.matchLevel || '中等',
+      matchedSkills: result.matchedSkills || [],
+      missingSkills: result.missingSkills || [],
+      knowledgeGaps: result.knowledgeGaps || [],
+      learningPriorities: (result.learningPriorities || []).map((item) => ({
+        topic: item.topic,
+        priority: item.priority as 'high' | 'medium' | 'low',
+        reason: item.reason,
+      })),
+      radarData: result.radarData || [],
+      strengths: result.strengths || [],
+      weaknesses: result.weaknesses || [],
+      summary: result.summary || '',
+      interviewTips: result.interviewTips || [],
+      totalQuestions: result.questions?.length || 0,
+      questionDistribution: result.questionDistribution || {},
+      viewCount: viewedResult?.viewCount ?? (result.viewCount || 0) + 1,
+    };
+  }
+
+  private formatAIInterviewAnalysis(result: AIInterviewResultDocument) {
+    return {
+      resultId: result.resultId,
+      type:
+        result.interviewType === AIInterviewType.SPECIAL
+          ? 'special_interview'
+          : 'comprehensive_interview',
+      company: result.company || '',
+      position: result.position || '',
+      salaryRange: result.salaryRange,
+      createdAt: this.getDocumentDate(result, 'createdAt'),
+      completedAt: result.completedAt,
+      reportStatus: result.reportStatus,
+      reportGeneratedAt: result.reportGeneratedAt,
+      overallScore: result.overallScore ?? 0,
+      overallLevel: result.overallLevel || '需提升',
+      overallComment: result.overallComment || '',
+      radarData: result.radarData || [],
+      strengths: result.strengths || [],
+      weaknesses: result.weaknesses || [],
+      improvements: result.improvements || [],
+      fluencyScore: result.fluencyScore ?? 0,
+      logicScore: result.logicScore ?? 0,
+      professionalScore: result.professionalScore ?? 0,
+      totalQuestions: result.totalQuestions || 0,
+      answeredQuestions: result.answeredQuestions || 0,
+      viewCount: result.viewCount || 0,
+    };
+  }
+
+  private getResumeContentFromSessionState(sessionState: unknown): string {
+    if (!sessionState || typeof sessionState !== 'object') return '';
+    const resumeContent = (sessionState as Record<string, unknown>)
+      .resumeContent;
+    return typeof resumeContent === 'string' ? resumeContent : '';
+  }
+
+  private getDocumentDate(document: object, field: string): string {
+    const value = (document as Record<string, unknown>)[field];
+    return value
+      ? new Date(value as string | number | Date).toISOString()
+      : new Date().toISOString();
   }
 
   private async executeStartMockInterview(
@@ -789,6 +1111,7 @@ export class InterviewService {
           },
         );
       }
+      this.triggerAssessmentReportGeneration(session.userId, session.resultId);
       return session.resultId;
     }
 
@@ -849,6 +1172,7 @@ export class InterviewService {
         candidateName: session.candidateName,
       },
     });
+    this.triggerAssessmentReportGeneration(session.userId, resultId);
     return resultId;
   }
 

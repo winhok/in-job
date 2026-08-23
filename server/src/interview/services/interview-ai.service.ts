@@ -10,7 +10,10 @@ import {
   RESUME_QUIZ_PROMPT_ANALYSIS_ONLY,
   RESUME_QUIZ_PROMPT_QUESTIONS_ONLY,
 } from '../prompts/resume-quiz.prompts';
-import { buildMockInterviewPrompt } from '../prompts/mock-interview.prompts';
+import {
+  buildAssessmentPrompt,
+  buildMockInterviewPrompt,
+} from '../prompts/mock-interview.prompts';
 import {
   QuestionCategory,
   QuestionDifficulty,
@@ -93,6 +96,45 @@ export interface MockInterviewQuestionResult {
   shouldEnd: boolean;
   standardAnswer?: string;
   reasoning?: string;
+}
+
+export interface InterviewAssessmentContext {
+  interviewType: 'special' | 'comprehensive';
+  company: string;
+  positionName: string;
+  jd: string;
+  resumeContent: string;
+  qaList: Array<{
+    question: string;
+    answer: string;
+    standardAnswer?: string;
+  }>;
+  answerQualityMetrics?: {
+    totalQuestions: number;
+    avgAnswerLength: number;
+    emptyAnswersCount: number;
+  };
+}
+
+export interface InterviewAssessmentResult {
+  overallScore: number;
+  overallLevel: string;
+  overallComment: string;
+  radarData: Array<{
+    dimension: string;
+    score: number;
+    description?: string;
+  }>;
+  strengths: string[];
+  weaknesses: string[];
+  improvements: Array<{
+    category: string;
+    suggestion: string;
+    priority: 'high' | 'medium' | 'low';
+  }>;
+  fluencyScore: number;
+  logicScore: number;
+  professionalScore: number;
 }
 
 /**
@@ -257,6 +299,47 @@ export class InterviewAIService {
     }
   }
 
+  /** 基于面试问答生成结构化评估报告。 */
+  async generateInterviewAssessmentReport(
+    context: InterviewAssessmentContext,
+  ): Promise<InterviewAssessmentResult> {
+    const startedAt = Date.now();
+    try {
+      const prompt = PromptTemplate.fromTemplate(
+        buildAssessmentPrompt(context),
+      );
+      const parser = new JsonOutputParser<Record<string, unknown>>();
+      const chain = prompt
+        .pipe(this.aiModelFactory.createDefaultModel())
+        .pipe(parser);
+      const result = await chain.invoke({
+        interviewType: context.interviewType,
+        company: context.company || '未提供',
+        positionName: context.positionName || '未提供',
+        jd: context.jd || '未提供',
+        resumeContent: context.resumeContent || '未提供',
+        qaList: context.qaList
+          .map(
+            (qa, index) =>
+              `问题${index + 1}: ${qa.question}\n用户回答: ${qa.answer}\n回答长度: ${qa.answer.length}字\n标准答案: ${qa.standardAnswer || '无'}`,
+          )
+          .join('\n\n'),
+        qualityMetrics: context.answerQualityMetrics
+          ? `\n## 回答质量统计\n- 总问题数: ${context.answerQualityMetrics.totalQuestions}\n- 平均回答长度: ${context.answerQualityMetrics.avgAnswerLength}字\n- 无效回答数: ${context.answerQualityMetrics.emptyAnswersCount}`
+          : '',
+      });
+
+      this.assertAssessmentResult(result);
+      this.logger.log(
+        `✅ 评估报告生成完成: 耗时=${Date.now() - startedAt}ms, overallScore=${result.overallScore}`,
+      );
+      return result;
+    } catch (error) {
+      this.logger.error(`❌ 生成评估报告失败: ${this.getErrorMessage(error)}`);
+      throw error;
+    }
+  }
+
   private buildPromptParams(input: ResumeQuizInput): ResumeQuizPromptParams {
     return {
       company: input.company || '未提供',
@@ -389,6 +472,65 @@ export class InterviewAIService {
     ];
     if (arrayFields.some((field) => !Array.isArray(result[field]))) {
       throw new Error('AI返回的匹配度分析字段不完整');
+    }
+  }
+
+  private assertAssessmentResult(
+    result: Record<string, unknown>,
+  ): asserts result is Record<string, unknown> & InterviewAssessmentResult {
+    const scoreFields = [
+      'overallScore',
+      'fluencyScore',
+      'logicScore',
+      'professionalScore',
+    ];
+    if (
+      scoreFields.some((field) => {
+        const score = result[field];
+        return typeof score !== 'number' || score < 0 || score > 100;
+      }) ||
+      typeof result.overallLevel !== 'string' ||
+      typeof result.overallComment !== 'string'
+    ) {
+      throw new Error('AI返回的评估分数或综合评价格式不正确');
+    }
+
+    if (
+      !Array.isArray(result.radarData) ||
+      !Array.isArray(result.strengths) ||
+      !Array.isArray(result.weaknesses) ||
+      !Array.isArray(result.improvements)
+    ) {
+      throw new Error('AI返回的评估报告字段不完整');
+    }
+
+    const radarData = result.radarData as Array<Record<string, unknown>>;
+    if (
+      radarData.some(
+        (item) =>
+          !item ||
+          typeof item.dimension !== 'string' ||
+          typeof item.score !== 'number' ||
+          item.score < 0 ||
+          item.score > 100 ||
+          (item.description !== undefined &&
+            typeof item.description !== 'string'),
+      )
+    ) {
+      throw new Error('AI返回的雷达图数据格式不正确');
+    }
+
+    const improvements = result.improvements as Array<Record<string, unknown>>;
+    if (
+      improvements.some(
+        (item) =>
+          !item ||
+          typeof item.category !== 'string' ||
+          typeof item.suggestion !== 'string' ||
+          !['high', 'medium', 'low'].includes(String(item.priority)),
+      )
+    ) {
+      throw new Error('AI返回的改进建议格式不正确');
     }
   }
 
