@@ -1,0 +1,43 @@
+{
+  "$schema": "https://raw.githubusercontent.com/wzf1997/delivery-harness/main/schemas/version.schema.json",
+  "schemaVersion": 1,
+  "version": "v0.1.0",
+  "title": "简历智能押题首个版本",
+  "documents": [
+    {
+      "id": "resume-quiz-requirement",
+      "type": "product-requirement",
+      "title": "简历智能押题生成",
+      "ref": "openspec/changes/resume-quiz-generation/proposal.md",
+      "primary": true,
+      "revision": 1
+    },
+    {
+      "id": "resume-quiz-design",
+      "type": "technical-design",
+      "title": "简历智能押题技术设计",
+      "ref": "openspec/changes/resume-quiz-generation/design.md",
+      "revision": 1
+    }
+  ],
+  "openSpec": {
+    "changeId": "resume-quiz-generation",
+    "path": "openspec/changes/resume-quiz-generation",
+    "status": "applied"
+  },
+  "sources": [
+    {
+      "repositoryId": "in-job",
+      "branch": "main",
+      "commit": "e9c34aad7030b0d58c9a5d6b0b1e1db040fe055b",
+      "status": "merged"
+    }
+  ],
+  "acceptance": {
+    "status": "pending"
+  },
+  "deployments": [],
+  "release": {
+    "status": "pending"
+  }
+}
