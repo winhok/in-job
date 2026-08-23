@@ -16,6 +16,10 @@ import { ResumeAnalysisService } from './services/resume-analysis.service';
 import { ConversationContinuationService } from './services/conversation-continuation.service';
 import { DocumentParserService } from './services/document-parser.service';
 import { InterviewAIService } from './services/interview-ai.service';
+import {
+  AIInterviewResult,
+  AIInterviewResultSchema,
+} from './schemas/ai-interview-result.schema';
 
 @Module({
   imports: [
@@ -23,6 +27,7 @@ import { InterviewAIService } from './services/interview-ai.service';
     MongooseModule.forFeature([
       { name: ConsumptionRecord.name, schema: ConsumptionRecordSchema },
       { name: ResumeQuizResult.name, schema: ResumeQuizResultSchema },
+      { name: AIInterviewResult.name, schema: AIInterviewResultSchema },
       { name: User.name, schema: UserSchema },
     ]),
   ],

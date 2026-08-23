@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import axios, { isAxiosError } from 'axios';
 import { lookup } from 'node:dns/promises';
 import { isIP } from 'node:net';
-import pdf from 'pdf-parse/lib/pdf-parse.js';
+import { PDFParse } from 'pdf-parse';
 import * as mammoth from 'mammoth';
 
 /**
@@ -184,19 +184,22 @@ export class DocumentParserService {
   }
 
   private async parsePdf(buffer: Buffer): Promise<string> {
+    const parser = new PDFParse({ data: buffer });
     try {
-      const data = await pdf(buffer);
-      if (!data.text?.trim()) {
+      const result = await parser.getText();
+      if (!result.text?.trim()) {
         throw new BadRequestException(
           'PDF 无法提取文本，请确认文件不是扫描图片、未加密且未损坏',
         );
       }
-      return data.text;
+      return result.text;
     } catch (error) {
       if (error instanceof BadRequestException) throw error;
       throw new BadRequestException(
         `PDF 文件解析失败: ${this.getErrorMessage(error)}`,
       );
+    } finally {
+      await parser.destroy();
     }
   }
 

@@ -10,6 +10,7 @@ import {
   RESUME_QUIZ_PROMPT_ANALYSIS_ONLY,
   RESUME_QUIZ_PROMPT_QUESTIONS_ONLY,
 } from '../prompts/resume-quiz.prompts';
+import { buildMockInterviewPrompt } from '../prompts/mock-interview.prompts';
 import {
   QuestionCategory,
   QuestionDifficulty,
@@ -73,6 +74,27 @@ export interface ResumeQuizAnalysisResult {
   interviewTips: string[];
 }
 
+export interface MockInterviewQuestionContext {
+  interviewType: 'special' | 'comprehensive';
+  resumeContent: string;
+  company?: string;
+  positionName?: string;
+  jd?: string;
+  conversationHistory: Array<{
+    role: 'interviewer' | 'candidate';
+    content: string;
+  }>;
+  elapsedMinutes: number;
+  targetDuration: number;
+}
+
+export interface MockInterviewQuestionResult {
+  question: string;
+  shouldEnd: boolean;
+  standardAnswer?: string;
+  reasoning?: string;
+}
+
 /**
  * 面试 AI 服务
  * 封装 LangChain + DeepSeek 的调用
@@ -82,6 +104,96 @@ export class InterviewAIService {
   private readonly logger = new Logger(InterviewAIService.name);
 
   constructor(private readonly aiModelFactory: AIModelFactory) {}
+
+  generateOpeningStatement(
+    interviewerName: string,
+    candidateName?: string,
+    positionName?: string,
+  ): string {
+    let greeting = `${candidateName?.trim() || '你'}好，我是你今天的面试官，你可以叫我${interviewerName}老师。\n\n`;
+    if (positionName?.trim()) {
+      greeting += `我看到你申请的是${positionName.trim()}岗位。\n\n`;
+    }
+    greeting +=
+      '让我们开始今天的面试吧。\n\n首先，请你简单介绍一下自己。自我介绍可以说明你的学历以及专业背景、工作经历以及取得的成绩等。';
+    return greeting;
+  }
+
+  async *generateOpeningStatementStream(
+    interviewerName: string,
+    candidateName?: string,
+    positionName?: string,
+  ): AsyncGenerator<string, string, undefined> {
+    const fullGreeting = this.generateOpeningStatement(
+      interviewerName,
+      candidateName,
+      positionName,
+    );
+    const chunkSize = 5;
+    for (let index = 0; index < fullGreeting.length; index += chunkSize) {
+      yield fullGreeting.slice(index, index + chunkSize);
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    }
+    return fullGreeting;
+  }
+
+  async *generateInterviewQuestionStream(
+    context: MockInterviewQuestionContext,
+  ): AsyncGenerator<string, MockInterviewQuestionResult, undefined> {
+    const startedAt = Date.now();
+    try {
+      const promptTemplate = PromptTemplate.fromTemplate(
+        buildMockInterviewPrompt(context),
+      );
+      const chain = promptTemplate.pipe(
+        this.aiModelFactory.createDefaultModel(),
+      );
+      const stream = await chain.stream({
+        interviewType: context.interviewType,
+        resumeContent: context.resumeContent,
+        company: context.company || '未提供',
+        positionName: context.positionName || '未提供',
+        jd: context.jd || '未提供',
+        conversationHistory: this.formatConversationHistory(
+          context.conversationHistory,
+        ),
+        elapsedMinutes: context.elapsedMinutes,
+        targetDuration: context.targetDuration,
+      });
+
+      let fullContent = '';
+      for await (const chunk of stream) {
+        const content = this.extractChunkText(chunk.content);
+        if (!content) continue;
+        fullContent += content;
+        yield content;
+      }
+
+      this.logger.log(
+        `✅ 模拟面试问题流式生成完成: 耗时=${Date.now() - startedAt}ms, 长度=${fullContent.length}`,
+      );
+      return this.parseInterviewResponse(fullContent, context);
+    } catch (error) {
+      this.logger.error(
+        `❌ 模拟面试问题生成失败: ${this.getErrorMessage(error)}`,
+      );
+      throw error;
+    }
+  }
+
+  generateClosingStatement(
+    interviewerName: string,
+    candidateName?: string,
+  ): string {
+    const name = candidateName?.trim() || '候选人';
+    return (
+      `好的${name}，今天的面试就到这里。\n\n` +
+      '感谢你的时间和精彩的回答。整体来看，你的表现不错。\n\n' +
+      '我们会将你的面试情况反馈给用人部门，预计3-5个工作日内会给你答复。\n\n' +
+      '如果有任何问题，可以随时联系HR。祝你一切顺利！\n\n' +
+      `— ${interviewerName}老师`
+    );
+  }
 
   async generateResumeQuizQuestionsOnly(
     input: ResumeQuizInput,
@@ -152,6 +264,65 @@ export class InterviewAIService {
       salaryRange: this.formatSalaryRange(input.minSalary, input.maxSalary),
       jd: input.jd,
       resumeContent: input.resumeContent,
+    };
+  }
+
+  private formatConversationHistory(
+    history: Array<{
+      role: 'interviewer' | 'candidate';
+      content: string;
+    }>,
+  ): string {
+    if (!history.length) return '（对话刚开始）';
+    return history
+      .map((item, index) => {
+        const role = item.role === 'interviewer' ? '面试官' : '候选人';
+        return `${index + 1}. ${role}: ${item.content}`;
+      })
+      .join('\n\n');
+  }
+
+  private extractChunkText(content: unknown): string {
+    if (typeof content === 'string') return content;
+    if (!Array.isArray(content)) return '';
+    const blocks: unknown[] = content;
+    return blocks
+      .map((block) => {
+        if (typeof block === 'string') return block;
+        if (block && typeof block === 'object') {
+          const candidate = block as Record<string, unknown>;
+          if (typeof candidate.text === 'string') return candidate.text;
+        }
+        return '';
+      })
+      .join('');
+  }
+
+  private parseInterviewResponse(
+    content: string,
+    context: Pick<
+      MockInterviewQuestionContext,
+      'elapsedMinutes' | 'targetDuration'
+    >,
+  ): MockInterviewQuestionResult {
+    const shouldEnd = content.includes('[END_INTERVIEW]');
+    const standardAnswerMatch = content.match(
+      /\[STANDARD_ANSWER\]([\s\S]*?)(?=\[END_INTERVIEW\]|$)/,
+    );
+    const standardAnswer = standardAnswerMatch?.[1].trim() || undefined;
+    const question = content
+      .split('[STANDARD_ANSWER]')[0]
+      .replace(/\[END_INTERVIEW\]/g, '')
+      .trim();
+
+    if (!question) throw new Error('AI返回的面试问题为空');
+    return {
+      question,
+      shouldEnd,
+      standardAnswer,
+      reasoning: shouldEnd
+        ? `面试已达到目标时长（${context.elapsedMinutes}/${context.targetDuration}分钟）`
+        : undefined,
     };
   }
 

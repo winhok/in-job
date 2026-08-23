@@ -1,6 +1,15 @@
 import { lastValueFrom, toArray } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
+
+vi.mock('./document-parser.service', () => ({
+  DocumentParserService: class DocumentParserService {},
+}));
+
 import { ResumeQuizDto } from '../dto/resume-quiz.dto';
+import {
+  MockInterviewEventType,
+  MockInterviewType,
+} from '../dto/mock-interview.dto';
 import {
   QuestionCategory,
   QuestionDifficulty,
@@ -32,6 +41,11 @@ describe('InterviewService resume quiz', () => {
     };
     const resumeQuizResultModel = {
       findOne: vi.fn().mockResolvedValue(options?.existingResult ?? null),
+      create: vi.fn().mockResolvedValue({}),
+    };
+    const aiInterviewResultModel = {
+      findOne: vi.fn().mockResolvedValue(null),
+      findOneAndUpdate: vi.fn().mockResolvedValue(null),
       create: vi.fn().mockResolvedValue({}),
     };
     const userModel = {
@@ -96,6 +110,7 @@ describe('InterviewService resume quiz', () => {
       aiService as never,
       consumptionRecordModel as never,
       resumeQuizResultModel as never,
+      aiInterviewResultModel as never,
       userModel as never,
     );
 
@@ -188,5 +203,151 @@ describe('InterviewService resume quiz', () => {
     expect(cachedData.isFromCache).toBe(true);
     expect(userModel.findOneAndUpdate).not.toHaveBeenCalled();
     expect(resumeQuizResultModel.create).not.toHaveBeenCalled();
+  });
+});
+
+describe('InterviewService mock interview lifecycle', () => {
+  const userId = '507f1f77bcf86cd799439011';
+
+  function createFlowService() {
+    type QaRecord = Record<string, unknown>;
+    interface FlowRecord extends Record<string, unknown> {
+      qaList: QaRecord[];
+      status?: string;
+      sessionState?: { isActive?: boolean };
+    }
+    interface ModelUpdate {
+      $push?: { qaList?: QaRecord };
+      $set?: Record<string, unknown>;
+      $inc?: Record<string, number>;
+    }
+    const record: FlowRecord = { qaList: [] };
+    const aiInterviewResultModel = {
+      create: vi.fn((value: Record<string, unknown>) => {
+        Object.assign(record, value);
+        return Promise.resolve(record);
+      }),
+      findOne: vi.fn().mockResolvedValue(record),
+      findOneAndUpdate: vi.fn((_query: unknown, update: ModelUpdate) => {
+        if (update.$push?.qaList) record.qaList.push(update.$push.qaList);
+        for (const [path, value] of Object.entries(update.$set || {})) {
+          const match = path.match(/^qaList\.(\d+)\.(.+)$/);
+          if (match) {
+            record.qaList[Number(match[1])][match[2]] = value;
+          } else {
+            record[path] = value;
+          }
+        }
+        for (const [field, value] of Object.entries(update.$inc || {})) {
+          const current = typeof record[field] === 'number' ? record[field] : 0;
+          record[field] = current + value;
+        }
+        return Promise.resolve(record);
+      }),
+    };
+    const consumptionRecordModel = {
+      create: vi.fn().mockResolvedValue({}),
+      findOneAndUpdate: vi.fn().mockResolvedValue({}),
+    };
+    const userModel = {
+      findOneAndUpdate: vi.fn().mockResolvedValue({
+        specialRemainingCount: 2,
+        behaviorRemainingCount: 2,
+      }),
+      findByIdAndUpdate: vi.fn().mockResolvedValue({}),
+    };
+    const documentParserService = {
+      cleanText: vi.fn((value: string) => value.trim()),
+      validateResumeContent: vi.fn(() => ({ isValid: true })),
+    };
+    const aiService = {
+      async *generateOpeningStatementStream() {
+        await Promise.resolve();
+        yield '你好，请先自我介绍。';
+        return '你好，请先自我介绍。';
+      },
+      async *generateInterviewQuestionStream() {
+        await Promise.resolve();
+        yield '谢谢你的介绍，请说明一个项目难点。';
+        yield '[STANDARD_ANSWER]说明背景、行动和结果。';
+        return {
+          question: '谢谢你的介绍，请说明一个项目难点。',
+          shouldEnd: false,
+          standardAnswer: '说明背景、行动和结果。',
+        };
+      },
+      generateClosingStatement: vi.fn(() => '感谢参与，面试结束。'),
+    };
+    const service = new InterviewService(
+      {} as never,
+      {} as never,
+      {} as never,
+      documentParserService as never,
+      aiService as never,
+      consumptionRecordModel as never,
+      {} as never,
+      aiInterviewResultModel as never,
+      userModel as never,
+    );
+    return { service, record, userModel, aiInterviewResultModel };
+  }
+
+  it('完成开始、回答、暂停、恢复和结束的完整状态流转', async () => {
+    const { service, record, userModel } = createFlowService();
+    const startEvents = await lastValueFrom(
+      service
+        .startMockInterviewWithStream(userId, {
+          interviewType: MockInterviewType.SPECIAL,
+          candidateName: '小王',
+          positionName: '前端开发工程师',
+          resumeContent:
+            '姓名小王，计算机专业毕业，具有三年前端开发工作经验。熟悉 Vue、TypeScript 和工程化，负责过多个企业项目并参与性能优化与团队协作。',
+        })
+        .pipe(toArray()),
+    );
+    const startEvent = startEvents.find(
+      (event) => event.type === MockInterviewEventType.START,
+    );
+    expect(startEvents.at(-1)?.type).toBe(MockInterviewEventType.WAITING);
+    expect(startEvent?.sessionId).toBeTruthy();
+    expect(startEvent?.resultId).toBeTruthy();
+    expect(record.qaList).toHaveLength(1);
+    expect(userModel.findOneAndUpdate).toHaveBeenCalledTimes(1);
+
+    const answerEvents = await lastValueFrom(
+      service
+        .answerMockInterviewWithStream(
+          userId,
+          startEvent!.sessionId!,
+          '我负责过一个复杂的中后台项目。',
+        )
+        .pipe(toArray()),
+    );
+    expect(answerEvents.map(({ type }) => type)).toEqual(
+      expect.arrayContaining([
+        MockInterviewEventType.THINKING,
+        MockInterviewEventType.QUESTION,
+        MockInterviewEventType.REFERENCE_ANSWER,
+        MockInterviewEventType.WAITING,
+      ]),
+    );
+    expect(record.qaList[0].answer).toContain('中后台项目');
+    expect(record.qaList[1]).toMatchObject({
+      question: '谢谢你的介绍，请说明一个项目难点。',
+      standardAnswer: '说明背景、行动和结果。',
+    });
+
+    await service.pauseMockInterview(userId, startEvent!.resultId!);
+    expect(record.status).toBe('paused');
+    const resumed = await service.resumeMockInterview(
+      userId,
+      startEvent!.resultId!,
+    );
+    expect(resumed.sessionId).toBe(startEvent!.sessionId);
+    expect(record.status).toBe('in_progress');
+
+    await service.endMockInterview(userId, startEvent!.resultId!);
+    expect(record.status).toBe('completed');
+    expect(record.sessionState?.isActive).toBe(false);
   });
 });
