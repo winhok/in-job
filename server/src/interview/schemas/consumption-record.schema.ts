@@ -135,4 +135,10 @@ export const ConsumptionRecordSchema =
 // 创建复合索引
 ConsumptionRecordSchema.index({ userId: 1, type: 1, createdAt: -1 });
 ConsumptionRecordSchema.index({ userId: 1, status: 1 });
-ConsumptionRecordSchema.index({ requestId: 1 }, { sparse: true });
+ConsumptionRecordSchema.index(
+  { userId: 1, requestId: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { requestId: { $type: 'string' } },
+  },
+);

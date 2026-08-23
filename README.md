@@ -27,3 +27,18 @@ pnpm test         # test every workspace package that has a test script
 
 The frontend can be copied into `apps/web/`. Its `package.json` should use the
 package name `@in-job/web` so the root `web` and `dev` scripts can select it.
+
+## DeliveryGuard
+
+The repository uses DeliveryGuard to keep specifications, implementation,
+acceptance evidence, repairs, and releases as separate, verifiable lifecycle
+stages.
+
+```bash
+pnpm deliveryguard:check   # validate configured delivery gates
+pnpm deliveryguard:status  # show derived lifecycle stages
+```
+
+Project delivery records live in `.deliveryguard/`, while active OpenSpec
+changes live in `openspec/changes/`. The reusable agent workflow is documented
+in `AGENTS.md` and `.agents/skills/`.

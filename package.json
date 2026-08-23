@@ -7,7 +7,12 @@
     "web": "pnpm --filter @in-job/web dev",
     "build": "pnpm -r --if-present build",
     "lint": "pnpm -r --if-present lint",
-    "test": "pnpm -r --if-present test"
+    "test": "pnpm -r --if-present test",
+    "deliveryguard:check": "deliveryguard check",
+    "deliveryguard:status": "deliveryguard status"
   },
-  "packageManager": "pnpm@11.22.0"
+  "packageManager": "pnpm@11.22.0",
+  "devDependencies": {
+    "deliveryguard": "file:vendor/deliveryguard/deliveryguard-0.1.0-f6907ee.tgz"
+  }
 }
