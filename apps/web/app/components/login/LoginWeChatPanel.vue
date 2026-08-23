@@ -2,8 +2,6 @@
 	<div
 		class="card relative overflow-hidden border border-gray-200 bg-white p-8 shadow-lg"
 	>
-		<!-- 增加一个测试登录的按钮，只在测试环境下展示 -->
-		<UButton v-if="isDev" @click="testLogin">测试登录</UButton>
 		<div
 			class="absolute -top-24 right-10 h-40 w-40 rounded-full bg-emerald-500/5 blur-3xl"
 		></div>
@@ -27,13 +25,25 @@
 						class="absolute inset-0 rounded-2xl border border-dashed border-neutral-200 bg-gradient-to-br from-white to-neutral-50 shadow-inner shadow-black/5"
 					></div>
 					<img
+						v-if="qrCodeUrl"
 						:src="qrCodeUrl"
 						alt="微信扫码登录二维码"
 						class="relative z-10 h-full w-full rounded-2xl object-cover p-3"
 						:class="{ 'opacity-20': isExpired }"
 					/>
 					<div
-						v-if="isExpired"
+						v-else
+						class="relative z-10 flex h-full w-full flex-col items-center justify-center gap-3 text-sm text-neutral-500"
+					>
+						<UIcon
+							v-if="isLoading"
+							name="i-heroicons-arrow-path"
+							class="h-7 w-7 animate-spin"
+						/>
+						<span>{{ loadError || '正在生成二维码…' }}</span>
+					</div>
+					<div
+						v-if="isExpired && qrCodeUrl"
 						class="absolute inset-0 z-20 flex flex-col items-center justify-center rounded-2xl bg-white/90 text-sm text-neutral-600"
 					>
 						<p>二维码已过期</p>
@@ -53,6 +63,7 @@
 					<button
 						type="button"
 						class="absolute -bottom-3 -right-4 z-30 rounded-full border border-white bg-white p-2 shadow-md transition hover:scale-105 leading-0"
+						:disabled="isLoading"
 						@click="refreshQr"
 						aria-label="刷新二维码"
 					>
@@ -128,27 +139,22 @@
 
 <script setup>
 import { computed, onMounted, onBeforeUnmount, ref } from 'vue'
-import { useNuxtApp, useToast } from '#imports'
+import { useNuxtApp } from '#imports'
 import {
 	generateWechatQRCodeAPI,
-	checkWechatQRCodeStatusAPI,
-	testLogin as testLoginAPI
+	checkWechatQRCodeStatusAPI
 } from '@/api/login'
 import { useUserStore } from '@/stores/user'
 import { handleLoginSuccess } from '@/permission'
-
-// 判断是否是开发环境
-const isDev = process.dev
 
 // 组件向父级抛出的事件：微信快速登录请求、二维码刷新提示
 const emit = defineEmits(['refreshQr'])
 
 const userStore = useUserStore()
+const { $api } = useNuxtApp()
 
 // 二维码有效倒计时（秒）
 const countDown = ref(300)
-// 用于触发二维码刷新（防缓存）
-const qrSeed = ref(Date.now())
 // 同意协议开关
 const agree = ref(true)
 
@@ -156,6 +162,9 @@ const agree = ref(true)
 const qrCodeUrl = ref('')
 const qrCodeId = ref('') // 二维码ID
 const scanSuccess = ref(false)
+const isLoading = ref(false)
+const loadError = ref('')
+let isChecking = false
 
 // 是否过期：倒计时归零视为过期
 const isExpired = computed(() => countDown.value <= 0)
@@ -164,48 +173,68 @@ const isExpired = computed(() => countDown.value <= 0)
 let timer = null
 // 扫码状态轮询计时器
 let qrCodeCheckTimer = null
+let isUnmounted = false
 
 // 启动倒计时（每次刷新二维码都会重置）
-const startTimer = () => {
+const startTimer = (expireTime) => {
 	if (timer) {
 		window.clearInterval(timer)
 		timer = null
 	}
-	countDown.value = 300
+	countDown.value = Math.max(0, Math.ceil((expireTime - Date.now()) / 1000))
 	timer = window.setInterval(() => {
 		if (countDown.value > 0) {
 			countDown.value -= 1
 		} else {
-			// 到期后自动刷新二维码（与文案保持一致）
-			refreshQr()
+			window.clearInterval(timer)
+			timer = null
+			void refreshQr()
 		}
 	}, 1000)
 }
 
-// 通过接口获取微信扫码登录二维码，并更新展示
-const { $api } = useNuxtApp()
+const stopQRCodeCheck = () => {
+	if (qrCodeCheckTimer) {
+		window.clearInterval(qrCodeCheckTimer)
+		qrCodeCheckTimer = null
+	}
+}
 
-// 拉取二维码地址（后端可能返回不同字段名，做兼容处理）
 const loadQrCode = async () => {
-	const response = await generateWechatQRCodeAPI($api)
-	qrCodeUrl.value = response.qrCodeUrl
-	qrCodeId.value = response.qrCodeId
-	startQRCodeCheck()
+	if (isLoading.value) return
+	isLoading.value = true
+	loadError.value = ''
+	stopQRCodeCheck()
+	try {
+		const response = await generateWechatQRCodeAPI($api)
+		if (isUnmounted) return
+		qrCodeUrl.value = response.qrCodeUrl
+		qrCodeId.value = response.qrCodeId
+		scanSuccess.value = false
+		startTimer(response.expireTime)
+		startQRCodeCheck()
+	} catch {
+		qrCodeUrl.value = ''
+		qrCodeId.value = ''
+		loadError.value = '二维码生成失败，请稍后重试'
+	} finally {
+		isLoading.value = false
+	}
 }
 
 // 检查二维码状态
 async function checkQRCodeStatus() {
+	if (!qrCodeId.value || isChecking || scanSuccess.value) return
+	isChecking = true
 	try {
-		// 调用后端接口检查扫码状态
 		const response = await checkWechatQRCodeStatusAPI($api, qrCodeId.value)
-
 		if (response.user && response.token) {
-			// 登录成功之后的操作
-			loginHandle(response)
+			await loginHandle(response)
 		}
-	} catch (error) {
-		// console.error('检查二维码状态失败:', error)
-		// 如果是网络错误，继续检查
+	} catch {
+		// 202 等待状态由请求层转换为异常；保留轮询。
+	} finally {
+		isChecking = false
 	}
 }
 
@@ -219,10 +248,7 @@ const loginHandle = async (response) => {
 	userStore.token = response.token
 
 	// 停止轮询，避免多次跳转
-	if (qrCodeCheckTimer) {
-		clearInterval(qrCodeCheckTimer)
-		qrCodeCheckTimer = null
-	}
+	stopQRCodeCheck()
 	// 切换组件 UI，隐藏二维码
 	scanSuccess.value = true
 	// 停止倒计时
@@ -236,39 +262,31 @@ const loginHandle = async (response) => {
 
 // 开始检查扫码状态
 function startQRCodeCheck() {
-	qrCodeCheckTimer = setInterval(() => {
-		checkQRCodeStatus()
+	stopQRCodeCheck()
+	qrCodeCheckTimer = window.setInterval(() => {
+		void checkQRCodeStatus()
 	}, 2000)
 }
 
-// 刷新二维码：更新种子、重置倒计时、拉取新链接并通知父组件
 const refreshQr = async () => {
-	qrSeed.value = Date.now()
-	startTimer()
 	await loadQrCode()
-	emit('refreshQr')
+	if (qrCodeUrl.value) {
+		emit('refreshQr')
+	}
 }
 
-// 组件挂载后，启动倒计时并立即拉取一次二维码
 onMounted(async () => {
-	startTimer()
 	await loadQrCode()
 })
 
-// 组件卸载前清理计时器
 onBeforeUnmount(() => {
+	isUnmounted = true
 	if (timer) {
 		window.clearInterval(timer)
+		timer = null
 	}
+	stopQRCodeCheck()
 })
-
-/**
- * 本地测试登录
- */
-const testLogin = async () => {
-	const response = await testLoginAPI($api)
-	loginHandle(response)
-}
 </script>
 
 <style scoped></style>

@@ -1,0 +1,36 @@
+{
+  "$schema": "https://raw.githubusercontent.com/wzf1997/delivery-harness/main/schemas/version.schema.json",
+  "schemaVersion": 1,
+  "version": "v0.3.0",
+  "title": "微信服务号扫码登录集成",
+  "documents": [
+    {
+      "id": "wechat-service-account-login-requirement",
+      "type": "product-requirement",
+      "title": "微信服务号扫码登录集成",
+      "ref": "openspec/changes/wechat-service-account-login/proposal.md",
+      "primary": true,
+      "revision": 1
+    },
+    {
+      "id": "wechat-service-account-login-design",
+      "type": "technical-design",
+      "title": "微信服务号扫码登录技术设计",
+      "ref": "openspec/changes/wechat-service-account-login/design.md",
+      "revision": 1
+    }
+  ],
+  "openSpec": {
+    "changeId": "wechat-service-account-login",
+    "path": "openspec/changes/wechat-service-account-login",
+    "status": "applied"
+  },
+  "sources": [],
+  "acceptance": {
+    "status": "pending"
+  },
+  "deployments": [],
+  "release": {
+    "status": "pending"
+  }
+}

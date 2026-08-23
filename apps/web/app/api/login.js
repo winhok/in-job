@@ -18,10 +18,3 @@ export const checkWechatQRCodeStatusAPI = ($api, qrCodeId) => {
 		method: 'GET'
 	})
 }
-
-/**
- * 本地测试登录接口
- */
-export const testLogin = ($api) => {
-	return $api('/wechat/test-login')
-}
