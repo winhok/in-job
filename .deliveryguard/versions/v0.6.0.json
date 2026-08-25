@@ -1,0 +1,36 @@
+{
+  "$schema": "https://raw.githubusercontent.com/wzf1997/delivery-harness/main/schemas/version.schema.json",
+  "schemaVersion": 1,
+  "version": "v0.6.0",
+  "title": "前端 TypeScript 迁移与废弃 API 清理",
+  "documents": [
+    {
+      "id": "frontend-typescript-migration-requirement",
+      "type": "product-requirement",
+      "title": "前端 TypeScript 迁移与废弃 API 清理",
+      "ref": "openspec/changes/frontend-typescript-migration/proposal.md",
+      "primary": true,
+      "revision": 1
+    },
+    {
+      "id": "frontend-typescript-migration-design",
+      "type": "technical-design",
+      "title": "前端 TypeScript 迁移技术设计",
+      "ref": "openspec/changes/frontend-typescript-migration/design.md",
+      "revision": 1
+    }
+  ],
+  "openSpec": {
+    "changeId": "frontend-typescript-migration",
+    "path": "openspec/changes/frontend-typescript-migration",
+    "status": "applied"
+  },
+  "sources": [],
+  "acceptance": {
+    "status": "pending"
+  },
+  "deployments": [],
+  "release": {
+    "status": "pending"
+  }
+}

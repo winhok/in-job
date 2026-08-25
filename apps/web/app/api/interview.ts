@@ -12,7 +12,7 @@ const ssePost = (path, params, options) => {
 	const connect = async () => {
 		try {
 			controller = new AbortController()
-			const headers = {
+			const headers: Record<string, string> = {
 				'Content-Type': 'application/json',
 				Accept: 'text/event-stream',
 				'Accept-Language': document.documentElement.lang || 'zh-CN'

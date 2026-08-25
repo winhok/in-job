@@ -1,7 +1,7 @@
 import { useRoute, navigateTo } from '#imports'
 import { useUserStore } from '~/stores/user'
 
-export function handleLoginSuccess(overrideRedirect) {
+export function handleLoginSuccess(overrideRedirect?: string) {
 	const user = useUserStore()
 	user.isLogin = true
 

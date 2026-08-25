@@ -65,7 +65,7 @@
 	</div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 const props = defineProps({
 	options: {
 		type: Array,

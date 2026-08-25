@@ -71,7 +71,7 @@
 	</div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, watch, computed } from 'vue'
 import { SERVICE_TAGS } from '@/constants/vip'
 import { useInterviewStore } from '@/stores/interview'
@@ -84,7 +84,7 @@ const props = defineProps({
 	serviceType: {
 		type: String,
 		required: true,
-		validator: (value) => Object.values(SERVICE_TAGS).includes(value)
+		validator: (value: string) => Object.values(SERVICE_TAGS).includes(value)
 	},
 	/**
 	 * 剩余次数

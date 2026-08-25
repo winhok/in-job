@@ -29,7 +29,7 @@
 	</div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, watch, onMounted } from 'vue'
 import { useInterviewStore } from '@/stores/interview'
 import { useGlobalModal } from '@/composables/useGlobalModal'

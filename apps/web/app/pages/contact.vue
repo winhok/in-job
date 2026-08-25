@@ -148,7 +148,7 @@
 	</section>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { SEO } from '@/constants/seo'
 import { useHead } from 'nuxt/app'
 import wechatQRCode from '@/assets/imgs/sunday.jpg'
@@ -164,18 +164,17 @@ const copyWeChat = async () => {
 		// 这里可以添加一个 toast 提示，但需要检查项目中是否有 toast 组件
 		alert(t('footer.copyWechatSuccess'))
 	} catch (err) {
-		// 降级方案
-		const textArea = document.createElement('textarea')
-		textArea.value = wechatId
-		document.body.appendChild(textArea)
-		textArea.select()
+		// 使用标准 Clipboard API 的 Blob 写入作为降级方案
 		try {
-			document.execCommand('copy')
+			await navigator.clipboard.write([
+				new ClipboardItem({
+					'text/plain': new Blob([wechatId], { type: 'text/plain' })
+				})
+			])
 			alert(t('footer.copyWechatSuccess'))
 		} catch (fallbackErr) {
 			alert(t('footer.copyWechatManual', { id: wechatId }))
 		}
-		document.body.removeChild(textArea)
 	}
 }
 

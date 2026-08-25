@@ -605,7 +605,7 @@
 	</div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import InterviewTip from '@/components/interview/interviewTip.vue'
 import { useInterviewStore } from '@/stores/interview'

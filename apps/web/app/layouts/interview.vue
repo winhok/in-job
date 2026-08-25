@@ -54,7 +54,7 @@
 	</UApp>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, onMounted, watch } from 'vue'
 import { useRoute, navigateTo, useToast } from '#imports'
 import { useInterviewStore } from '@/stores/interview'

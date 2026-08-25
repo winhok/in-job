@@ -66,7 +66,7 @@
 	</section>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { useHead, useSeoMeta, useToast } from '#imports'
 import LoginPitch from '../components/login/LoginPitch.vue'
 import LoginWeChatPanel from '../components/login/LoginWeChatPanel.vue'
@@ -82,10 +82,10 @@ useHead(() => ({
 	title: `${t('nav.login')} - ${t('brand.name')}`,
 	bodyAttrs: { class: 'bg-neutral-900' }
 }))
-useSeoMeta(() => ({
+useSeoMeta((() => ({
 	title: `${t('nav.login')} - ${t('brand.name')}`,
 	description: t('seo.loginDescription')
-}))
+})) as any)
 
 const handleQrRefresh = () => {
 	toast.add({

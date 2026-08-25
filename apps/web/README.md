@@ -48,7 +48,7 @@
 ├── server/
 │   └── api/                    # Nitro 服务端接口（如动态 sitemap）
 ├── public/                     # 公共静态资源
-├── nuxt.config.js              # Nuxt/Nitro/Vite 总配置
+├── nuxt.config.ts              # Nuxt/Nitro/Vite 总配置
 └── ecosystem.config.js         # PM2 部署配置
 ```
 
@@ -86,7 +86,7 @@
 
 #### 5) 扩展能力
 
-- SEO：`nuxt.config.js` 全局 head + `constants/seo.js` + `useSEO`
+- SEO：`nuxt.config.ts` 全局 head + `constants/seo.ts` + `useSEO`
 - 文件上传：STS 临时凭证 + OSS 客户端上传（简历管理）
 - 语音能力：语音输入（识别优化）+ AI 文本语音播报
 
@@ -121,7 +121,7 @@
 ### 1) 基础路径与代理
 
 - 前端默认请求基路径：`/dev-api`
-- 本地开发通过 `nuxt.config.js -> nitro.devProxy` 代理到后端服务
+- 本地开发通过 `nuxt.config.ts -> nitro.devProxy` 代理到后端服务
 - 生产环境可通过 `VITE_API_BASE_URL` 覆盖
 
 ### 2) 鉴权约定
@@ -190,11 +190,11 @@ pnpm dev
 
 ### 4) 后端接口联调配置（重点）
 
-项目默认通过 `nuxt.config.js` 中的 `nitro.devProxy` 代理 `/dev-api/*` 请求。  
+项目默认通过 `nuxt.config.ts` 中的 `nitro.devProxy` 代理 `/dev-api/*` 请求。
 你需要把代理目标改成你自己的后端地址（本地或测试环境）：
 
 ```js
-// nuxt.config.js
+// nuxt.config.ts
 nitro: {
 	devProxy: {
 		'/dev-api/': {
@@ -210,7 +210,7 @@ nitro: {
 
 ### 5) 环境变量说明
 
-项目主要通过 `runtimeConfig.public` 读取以下变量（定义见 `nuxt.config.js`）：
+项目主要通过 `runtimeConfig.public` 读取以下变量（定义见 `nuxt.config.ts`）：
 
 - `VITE_API_BASE_URL`：前端请求基础路径，默认 `/dev-api`
 - `VITE_RESUME_PREVIEW_URL`：简历预览站点地址

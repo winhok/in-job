@@ -1,0 +1,12 @@
+{
+  "extends": "./.nuxt/tsconfig.json",
+  "compilerOptions": {
+    "strict": false,
+    "noImplicitAny": false,
+    "noUncheckedIndexedAccess": false
+  },
+  "vueCompilerOptions": {
+    "strictTemplates": false,
+    "skipTemplateCodegen": true
+  }
+}

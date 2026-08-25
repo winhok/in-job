@@ -141,7 +141,7 @@
 	</div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, onMounted, onBeforeUnmount, ref } from 'vue'
 import { useNuxtApp } from '#imports'
 import {

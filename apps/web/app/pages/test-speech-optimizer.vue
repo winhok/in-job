@@ -224,7 +224,7 @@
 	</div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 if (!import.meta.dev) {
 	throw createError({ statusCode: 404, statusMessage: 'Not Found' })
 }
@@ -357,7 +357,7 @@ const techVocabularySample = computed(() => {
 })
 
 // SEO 配置（仅开发环境）
-if (process.dev) {
+if (import.meta.dev) {
 	useSEO({
 		title: '语音识别优化器测试',
 		description: '测试和调试语音识别文本优化功能',

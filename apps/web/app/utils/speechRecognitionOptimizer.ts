@@ -1,6 +1,6 @@
 /**
  * 语音识别文本优化器
- * 
+ *
  * 功能：
  * 1. 智能文本后处理和纠错
  * 2. 上下文感知的优化
@@ -8,16 +8,16 @@
  * 4. 智能标点符号添加
  * 5. 语义分析和修正
  * 6. 多音字和同音字处理
- * 
+ *
  * 使用示例：
  * ```javascript
  * import { SpeechRecognitionOptimizer } from '@/utils/speechRecognitionOptimizer'
- * 
+ *
  * const optimizer = new SpeechRecognitionOptimizer({
  *   context: 'interview', // 上下文类型
  *   profession: 'programmer' // 职业类型
  * })
- * 
+ *
  * const optimizedText = optimizer.optimize('我熟悉皮埃奇皮和杰斯')
  * // 输出: "我熟悉PHP和JS"
  * ```
@@ -94,14 +94,14 @@ const TECH_VOCABULARY = {
 	西加加: 'C++',
 	C加加: 'C++',
 	C家家: 'C++',
-	
+
 	// 前端框架
 	维优易: 'Vue',
 	V优: 'Vue',
 	瑞阿克特: 'React',
 	瑞艾克特: 'React',
 	安格勒: 'Angular',
-	
+
 	// 后端框架
 	斯普林: 'Spring',
 	斯普林布特: 'SpringBoot',
@@ -109,14 +109,14 @@ const TECH_VOCABULARY = {
 	弗拉斯克: 'Flask',
 	诺德: 'Node',
 	诺德杰斯: 'NodeJS',
-	
+
 	// 数据库
 	麦艾斯扣欧: 'MySQL',
 	买艾斯酷欧: 'MySQL',
 	摸狗迪比: 'MongoDB',
 	瑞迪斯: 'Redis',
 	扑死构欧: 'PostgreSQL',
-	
+
 	// 工具和服务
 	艾皮爱: 'API',
 	艾皮艾: 'API',
@@ -124,7 +124,7 @@ const TECH_VOCABULARY = {
 	居特哈布: 'GitHub',
 	道克: 'Docker',
 	库伯内踢死: 'Kubernetes',
-	
+
 	// Web 相关
 	艾奇踢踢匹: 'HTTP',
 	艾奇踢踢匹艾思: 'HTTPS',
@@ -133,7 +133,7 @@ const TECH_VOCABULARY = {
 	唉贾克斯: 'Ajax',
 	JSON: 'JSON',
 	杰森: 'JSON',
-	
+
 	// 其他技术术语
 	优艾斯: 'UX',
 	优爱: 'UI',
@@ -150,26 +150,26 @@ const INTERVIEW_VOCABULARY = {
 	项目经验: '项目经验',
 	工作经验: '工作经验',
 	实习经历: '实习经历',
-	
+
 	// 技能描述
 	熟悉: '熟悉',
 	了解: '了解',
 	掌握: '掌握',
 	精通: '精通',
 	擅长: '擅长',
-	
+
 	// 项目角色
 	负责: '负责',
 	参与: '参与',
 	主导: '主导',
 	协作: '协作',
-	
+
 	// 技术栈
 	技术栈: '技术栈',
 	前端: '前端',
 	后端: '后端',
 	全栈: '全栈',
-	
+
 	// 常见短语
 	比如说: '比如',
 	举个例子: '举例来说',
@@ -188,7 +188,7 @@ const HOMOPHONE_CORRECTIONS = {
 	'函素': '函数',
 	'返回值': '返回值',
 	'返灰值': '返回值',
-	
+
 	// 常见错误
 	'用户': '用户',
 	'用护': '用户',
@@ -198,7 +198,7 @@ const HOMOPHONE_CORRECTIONS = {
 	'数剧库': '数据库',
 	'服务器': '服务器',
 	'服雾器': '服务器',
-	
+
 	// 产品经理相关
 	'需求': '需求',
 	'虚求': '需求',
@@ -206,7 +206,7 @@ const HOMOPHONE_CORRECTIONS = {
 	'愿型': '原型',
 	'流程图': '流程图',
 	'留程图': '流程图',
-	
+
 	// 设计相关
 	'交互': '交互',
 	'叫虎': '交互',
@@ -227,14 +227,14 @@ const PUNCTUATION_RULES = {
 		'是不是', '能不能', '可不可以', '行不行',
 		'有没有', '好不好', '对不对'
 	],
-	
+
 	// 句子结束标志词
 	endMarkers: [
 		'了', '的', '得', '地',
 		'好', '是', '对', '没有', '可以', '不是',
 		'完成', '结束', '明白', '知道', '清楚'
 	],
-	
+
 	// 需要逗号的连接词
 	commaMarkers: [
 		'但是', '然后', '接着', '其次', '另外',
@@ -246,16 +246,22 @@ const PUNCTUATION_RULES = {
 // ==================== 核心优化器类 ====================
 
 export class SpeechRecognitionOptimizer {
-	constructor(options = {}) {
+	context: string
+	profession: string
+	history: string[]
+	maxHistoryLength: number
+	vocabulary: Record<string, string>
+
+	constructor(options: any = {}) {
 		this.context = options.context || 'general' // 上下文类型：interview, general, tech 等
 		this.profession = options.profession || 'general' // 职业类型：programmer, designer, pm 等
 		this.history = [] // 历史文本，用于上下文分析
 		this.maxHistoryLength = options.maxHistoryLength || 10 // 最大历史记录数
-		
+
 		// 合并词典
 		this.vocabulary = this._buildVocabulary()
 	}
-	
+
 	/**
 	 * 构建综合词典
 	 */
@@ -267,7 +273,7 @@ export class SpeechRecognitionOptimizer {
 			...INTERVIEW_VOCABULARY,
 			...HOMOPHONE_CORRECTIONS
 		}
-		
+
 		// 根据职业类型添加专业词汇
 		if (this.profession === 'programmer') {
 			return {
@@ -285,10 +291,10 @@ export class SpeechRecognitionOptimizer {
 				...this._getPMVocabulary()
 			}
 		}
-		
+
 		return base
 	}
-	
+
 	/**
 	 * 获取程序员专业词汇
 	 */
@@ -308,7 +314,7 @@ export class SpeechRecognitionOptimizer {
 			'框架': '框架'
 		}
 	}
-	
+
 	/**
 	 * 获取设计师专业词汇
 	 */
@@ -326,7 +332,7 @@ export class SpeechRecognitionOptimizer {
 			'界面': '界面'
 		}
 	}
-	
+
 	/**
 	 * 获取产品经理专业词汇
 	 */
@@ -344,47 +350,47 @@ export class SpeechRecognitionOptimizer {
 			'优先级': '优先级'
 		}
 	}
-	
+
 	/**
 	 * 主优化方法
 	 * @param {string} text - 原始识别文本
 	 * @param {Object} options - 优化选项
 	 * @returns {string} 优化后的文本
 	 */
-	optimize(text, options = {}) {
+	optimize(text: string, options: any = {}) {
 		if (!text || typeof text !== 'string') return ''
-		
+
 		let processed = text
-		
+
 		// 1. 基础清理
 		processed = this._basicClean(processed)
-		
+
 		// 2. 移除口语化词汇
 		processed = this._removeFillerWords(processed)
-		
+
 		// 3. 同音字纠错
 		processed = this._correctHomophones(processed)
-		
+
 		// 4. 技术词汇识别和替换
 		processed = this._replaceTechTerms(processed)
-		
+
 		// 5. 上下文感知优化
 		processed = this._contextAwareOptimize(processed)
-		
+
 		// 6. 智能标点符号（如果启用）
 		if (options.addPunctuation !== false) {
 			processed = this._addSmartPunctuation(processed, options.timeSinceLastFinal)
 		}
-		
+
 		// 7. 后处理清理
 		processed = this._finalClean(processed)
-		
+
 		// 8. 更新历史记录
 		this._updateHistory(processed)
-		
+
 		return processed
 	}
-	
+
 	/**
 	 * 基础文本清理
 	 */
@@ -394,82 +400,82 @@ export class SpeechRecognitionOptimizer {
 			.replace(/\s+/g, '') // 移除空格（中文不需要空格）
 			.replace(/[\r\n]+/g, '') // 移除换行
 	}
-	
+
 	/**
 	 * 移除口语化词汇
 	 */
 	_removeFillerWords(text) {
 		let result = text
-		
+
 		// 按长度排序，先替换长的词（避免部分匹配问题）
 		const sortedFillers = Object.entries(FILLER_WORDS)
 			.sort((a, b) => b[0].length - a[0].length)
-		
+
 		for (const [filler, replacement] of sortedFillers) {
 			const regex = new RegExp(filler, 'g')
 			result = result.replace(regex, replacement)
 		}
-		
+
 		return result
 	}
-	
+
 	/**
 	 * 同音字/近音字纠错
 	 * 使用更智能的匹配算法，考虑上下文
 	 */
 	_correctHomophones(text) {
 		let result = text
-		
+
 		// 按长度排序，优先匹配长的短语
 		const sortedCorrections = Object.entries(HOMOPHONE_CORRECTIONS)
 			.sort((a, b) => b[0].length - a[0].length)
-		
+
 		for (const [wrong, correct] of sortedCorrections) {
 			// 使用全局替换
 			const regex = new RegExp(wrong, 'g')
 			result = result.replace(regex, correct)
 		}
-		
+
 		return result
 	}
-	
+
 	/**
 	 * 技术词汇识别和替换
 	 */
 	_replaceTechTerms(text) {
 		let result = text
-		
+
 		// 按长度排序，优先匹配长的词汇
 		const sortedTerms = Object.entries(TECH_VOCABULARY)
 			.sort((a, b) => b[0].length - a[0].length)
-		
+
 		for (const [spoken, written] of sortedTerms) {
 			const regex = new RegExp(spoken, 'gi')
 			result = result.replace(regex, written)
 		}
-		
+
 		return result
 	}
-	
+
 	/**
 	 * 上下文感知优化
 	 * 基于历史文本进行智能优化
 	 */
 	_contextAwareOptimize(text) {
 		let result = text
-		
+
 		// 1. 代词还原
 		result = this._resolvePronoun(result)
-		
+
 		// 2. 重复词消除
 		result = this._removeRepetition(result)
-		
+
 		// 3. 语义连贯性优化
 		result = this._improveCoherence(result)
-		
+
 		return result
 	}
-	
+
 	/**
 	 * 代词还原
 	 * 例如："它的性能很好" → 如果上文提到 "Redis"，可能指 "Redis的性能很好"
@@ -477,12 +483,12 @@ export class SpeechRecognitionOptimizer {
 	_resolvePronoun(text) {
 		// 简化实现：检测指代词
 		const pronouns = ['它', '这个', '那个', '这', '那']
-		
+
 		// 如果文本以代词开头，且历史记录中有明确的主语
 		for (const pronoun of pronouns) {
 			if (text.startsWith(pronoun) && this.history.length > 0) {
 				const lastText = this.history[this.history.length - 1]
-				
+
 				// 提取上文的技术术语作为可能的指代对象
 				const techTerms = Object.values(TECH_VOCABULARY)
 				for (const term of techTerms) {
@@ -494,45 +500,45 @@ export class SpeechRecognitionOptimizer {
 				}
 			}
 		}
-		
+
 		return text
 	}
-	
+
 	/**
 	 * 移除重复词
 	 */
 	_removeRepetition(text) {
 		// 移除连续重复的字或词
 		let result = text
-		
+
 		// 移除连续重复的单字
 		result = result.replace(/(.)\1{2,}/g, '$1')
-		
+
 		// 移除连续重复的双字词
 		result = result.replace(/(.{2})\1+/g, '$1')
-		
+
 		return result
 	}
-	
+
 	/**
 	 * 改善语义连贯性
 	 */
 	_improveCoherence(text) {
 		let result = text
-		
+
 		// 添加合适的连接词（如果上下文需要）
 		if (this.history.length > 0) {
 			const lastText = this.history[this.history.length - 1]
-			
+
 			// 如果前一句以问号结尾，当前句可能是回答
 			if (lastText.endsWith('？') || lastText.endsWith('?')) {
 				// 可以添加 "是的" "不是" 等判断
 			}
 		}
-		
+
 		return result
 	}
-	
+
 	/**
 	 * 智能添加标点符号
 	 * @param {string} text - 文本
@@ -540,26 +546,26 @@ export class SpeechRecognitionOptimizer {
 	 */
 	_addSmartPunctuation(text, timeSinceLastFinal = 0) {
 		if (!text) return text
-		
+
 		// 如果已经有标点符号，直接返回
 		if (/[。！？，、；：]$/.test(text)) {
 			return text
 		}
-		
+
 		// 1. 检查是否是问句
-		const isQuestion = PUNCTUATION_RULES.questionMarkers.some(marker => 
+		const isQuestion = PUNCTUATION_RULES.questionMarkers.some(marker =>
 			text.includes(marker)
 		)
-		
+
 		if (isQuestion) {
 			return text + '？'
 		}
-		
+
 		// 2. 检查是否是句子结尾
-		const isEnd = PUNCTUATION_RULES.endMarkers.some(marker => 
+		const isEnd = PUNCTUATION_RULES.endMarkers.some(marker =>
 			text.endsWith(marker)
 		)
-		
+
 		// 3. 根据停顿时间决定标点
 		if (timeSinceLastFinal > 1500) {
 			// 长时间停顿，可能是句子结束
@@ -571,19 +577,19 @@ export class SpeechRecognitionOptimizer {
 			// 句子结束标志词，添加句号
 			return text + '。'
 		}
-		
+
 		// 4. 检查是否包含连接词，需要逗号
-		const needsComma = PUNCTUATION_RULES.commaMarkers.some(marker => 
+		const needsComma = PUNCTUATION_RULES.commaMarkers.some(marker =>
 			text.startsWith(marker)
 		)
-		
+
 		if (needsComma && this.history.length > 0) {
 			return text + '，'
 		}
-		
+
 		return text
 	}
-	
+
 	/**
 	 * 最终清理
 	 */
@@ -595,35 +601,35 @@ export class SpeechRecognitionOptimizer {
 			.replace(/([。！？])，/g, '$1') // 修正 "。，" → "。"
 			.trim()
 	}
-	
+
 	/**
 	 * 更新历史记录
 	 */
 	_updateHistory(text) {
 		if (text) {
 			this.history.push(text)
-			
+
 			// 限制历史记录长度
 			if (this.history.length > this.maxHistoryLength) {
 				this.history.shift()
 			}
 		}
 	}
-	
+
 	/**
 	 * 清除历史记录
 	 */
 	clearHistory() {
 		this.history = []
 	}
-	
+
 	/**
 	 * 获取历史记录
 	 */
 	getHistory() {
 		return [...this.history]
 	}
-	
+
 	/**
 	 * 批量优化多段文本
 	 * @param {Array<string>} texts - 文本数组
@@ -632,7 +638,7 @@ export class SpeechRecognitionOptimizer {
 	optimizeBatch(texts) {
 		return texts.map(text => this.optimize(text))
 	}
-	
+
 	/**
 	 * 设置职业类型
 	 */
@@ -640,14 +646,14 @@ export class SpeechRecognitionOptimizer {
 		this.profession = profession
 		this.vocabulary = this._buildVocabulary()
 	}
-	
+
 	/**
 	 * 设置上下文类型
 	 */
 	setContext(context) {
 		this.context = context
 	}
-	
+
 	/**
 	 * 添加自定义词典
 	 * @param {Object} customDict - 自定义词典 { '识别词': '替换词' }
@@ -665,9 +671,9 @@ export class SpeechRecognitionOptimizer {
 /**
  * 创建优化器实例（单例模式）
  */
-let defaultOptimizer = null
+let defaultOptimizer: SpeechRecognitionOptimizer | null = null
 
-export function getDefaultOptimizer(options = {}) {
+export function getDefaultOptimizer(options: any = {}) {
 	if (!defaultOptimizer) {
 		defaultOptimizer = new SpeechRecognitionOptimizer(options)
 	}
@@ -680,7 +686,7 @@ export function getDefaultOptimizer(options = {}) {
  * @param {Object} options - 优化选项
  * @returns {string} 优化后的文本
  */
-export function optimizeText(text, options = {}) {
+export function optimizeText(text: string, options: any = {}) {
 	const optimizer = getDefaultOptimizer()
 	return optimizer.optimize(text, options)
 }
@@ -694,23 +700,23 @@ export function optimizeText(text, options = {}) {
 export function addSmartPunctuation(text, timeSinceLastFinal = 0) {
 	if (!text) return text
 	if (/[。！？，、；：]$/.test(text)) return text
-	
+
 	// 检查是否是问句
-	const isQuestion = PUNCTUATION_RULES.questionMarkers.some(marker => 
+	const isQuestion = PUNCTUATION_RULES.questionMarkers.some(marker =>
 		text.includes(marker)
 	)
-	
+
 	if (isQuestion) {
 		return text + '？'
 	}
-	
+
 	// 根据停顿时间决定
 	if (timeSinceLastFinal > 1500) {
 		return text + '。'
 	} else if (timeSinceLastFinal > 800) {
 		return text + '，'
 	}
-	
+
 	return text
 }
 
@@ -721,7 +727,7 @@ export function addSmartPunctuation(text, timeSinceLastFinal = 0) {
  */
 export function postProcessText(text) {
 	if (!text) return ''
-	
+
 	return text
 		.trim()
 		.replace(/\s+/g, '')
@@ -752,4 +758,3 @@ export default {
 	FILLER_WORDS,
 	NUMBER_MAPPINGS
 }
-

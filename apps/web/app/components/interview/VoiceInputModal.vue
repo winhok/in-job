@@ -47,7 +47,7 @@
 	</div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { SpeechRecognitionOptimizer } from '@/utils/speechRecognitionOptimizer'
 const { locale } = useI18n()
@@ -100,7 +100,7 @@ const getSR = () => {
 	return window.SpeechRecognition || window.webkitSpeechRecognition || null
 }
 
-// 注意：文本优化功能已迁移到 @/utils/speechRecognitionOptimizer.js
+// 注意：文本优化功能已迁移到 @/utils/speechRecognitionOptimizer.ts
 // 现在使用优化器实例进行所有文本处理
 
 const initRecognition = () => {

@@ -21,9 +21,9 @@ positionName: "前端开发工程师"
 company: 字节跳动,
 minSalary: 25,
 maxSalary: 35,
-jd: '' 
+jd: ''
 		*/
-		selectedPosition: {},
+		selectedPosition: {} as Record<string, any>,
 		resumeId: null, // 简历 ID（当 type='resume' 时）
 		resumeText: '', // 简历文本（当 type='text' 时）
 
@@ -50,9 +50,9 @@ jd: ''
 		所有的对话集合，包括了：面试官（interviewer） + 候选人（user）
 	 {"role": "interviewer","type":"start","sessionId":"f61f5e8c-8b2b-4793-b015-711dfa0ab7d2","interviewerName":"孙娜","content":"你好，","questionNumber":0,"totalQuestions":12,"elapsedMinutes":0}
 */
-		messages: [],
+		messages: [] as Array<Record<string, any>>,
 		// 记录标准答案
-		referenceAnswer: [],
+		referenceAnswer: [] as string[],
 		// 面试官名称：
 		interviewerName: '',
 
@@ -159,7 +159,7 @@ jd: ''
 
 		// 重置面试数据
 		resetInterview() {
-			this.interviewId = null
+			;(this as any).interviewId = null
 			this.interviewStatus = 'idle'
 			this.interviewDuration = '00:00:00'
 			this.messages = []
@@ -176,7 +176,7 @@ jd: ''
 		reset() {
 			this.currentStep = 1
 			this.selectedPosition = {}
-			this.resumeType = null
+			;(this as any).resumeType = null
 			this.resumeId = null
 			this.resumeText = ''
 			this.resetInterview()

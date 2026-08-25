@@ -242,7 +242,7 @@
 	</div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { useInterviewStore } from '@/stores/interview'
 import {
 	startMockInterviewAPI,
@@ -427,7 +427,7 @@ const loadHistoryData = async () => {
 			interviewStore.interviewEventType = 'end'
 			// 处理路由跳转
 			router.replace({
-				query: { ...route.query, history: true, step: 'complete' }
+				query: { ...route.query, history: true as any, step: 'complete' }
 			})
 			// 延迟 500 ms 重新加载页面，以重新获取历史记录的数据
 			setTimeout(() => {

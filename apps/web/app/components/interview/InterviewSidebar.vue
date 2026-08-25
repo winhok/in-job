@@ -180,7 +180,7 @@
 	</div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
 import { useInterviewStore } from '@/stores/interview'
 import { navigateTo, useRoute } from '#imports'

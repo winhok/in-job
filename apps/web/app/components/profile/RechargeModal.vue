@@ -356,7 +356,7 @@
 	</UModal>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, watch, computed, onUnmounted } from 'vue'
 import QRCode from 'qrcode'
 import { useToast } from '#imports'

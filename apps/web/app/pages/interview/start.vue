@@ -221,7 +221,7 @@
 	</div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { useHead } from 'nuxt/app'
 import { SEO } from '@/constants/seo'
 import { ref, computed, onMounted } from 'vue'

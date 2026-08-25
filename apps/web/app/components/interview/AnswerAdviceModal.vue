@@ -10,7 +10,7 @@
 	</div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { useInterviewStore } from '@/stores/interview'
 const props = defineProps({
 	questionContent: { type: String, required: true }

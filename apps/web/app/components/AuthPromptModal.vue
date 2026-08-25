@@ -51,7 +51,7 @@
 	</UModal>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
 import { useUIStore } from '@/stores/ui'
 import { navigateTo } from '#app'

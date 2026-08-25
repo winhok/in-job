@@ -25,7 +25,7 @@ export default defineNuxtConfig({
 		port: 8080
 	},
 
-	// 站点基础信息由 app/constants/seo.js 统一管理
+	// 站点基础信息由 app/constants/seo.ts 统一管理
 
 	// —— 全局 <head> ——（完整的 SEO 优化配置）
 	app: {
@@ -168,8 +168,8 @@ export default defineNuxtConfig({
 		defaultLocale: 'zh-CN',
 		langDir: 'locales',
 		locales: [
-			{ code: 'zh-CN', name: '简体中文', file: 'zh-CN.js' },
-			{ code: 'en-US', name: 'English', file: 'en-US.js' }
+			{ code: 'zh-CN', name: '简体中文', file: 'zh-CN.ts' },
+			{ code: 'en-US', name: 'English', file: 'en-US.ts' }
 		],
 		detectBrowserLanguage: {
 			useCookie: true,
@@ -247,4 +247,4 @@ export default defineNuxtConfig({
 			__BUILD_TIME__: JSON.stringify(new Date().toISOString())
 		}
 	}
-})
+} as any)

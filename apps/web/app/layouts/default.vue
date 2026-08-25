@@ -222,7 +222,7 @@
 	</UApp>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { useUIStore } from '@/stores/ui'
 import { navigateTo, useToast } from '#imports'
 import wechatQRCode from '@/assets/imgs/sunday-gong-zhong-hao.png'
@@ -241,31 +241,28 @@ const copyWeChat = async () => {
 		toast.add({
 			title: t('common.copySuccess'),
 			description: t('footer.copyWechatSuccess'),
-			color: 'green'
+			color: 'green' as any
 		})
 	} catch (err) {
-		// 降级方案
-		const textArea = document.createElement('textarea')
-		textArea.value = wechatId
-		textArea.style.position = 'fixed'
-		textArea.style.opacity = '0'
-		document.body.appendChild(textArea)
-		textArea.select()
+		// 使用标准 Clipboard API 的 Blob 写入作为降级方案
 		try {
-			document.execCommand('copy')
+			await navigator.clipboard.write([
+				new ClipboardItem({
+					'text/plain': new Blob([wechatId], { type: 'text/plain' })
+				})
+			])
 			toast.add({
 				title: t('common.copySuccess'),
 				description: t('footer.copyWechatSuccess'),
-				color: 'green'
+				color: 'green' as any
 			})
 		} catch (fallbackErr) {
 			toast.add({
 				title: t('common.copyFailed'),
 				description: t('footer.copyWechatManual', { id: wechatId }),
-				color: 'red'
+				color: 'red' as any
 			})
 		}
-		document.body.removeChild(textArea)
 	}
 }
 </script>

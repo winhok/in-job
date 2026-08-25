@@ -7,7 +7,7 @@
 	<AuthPromptModal />
 </template>
 
-<script setup>
+<script setup lang="ts">
 import AuthPromptModal from '@/components/AuthPromptModal.vue'
 import FeedbackButton from '@/components/feedback-button.vue'
 import { useRoute, useRouter } from '#imports'
@@ -21,7 +21,7 @@ const userStore = useUserStore()
 const { locale, t } = useI18n()
 
 useHead(() => ({ htmlAttrs: { lang: locale.value } }))
-useSeoMeta(() => ({
+useSeoMeta((() => ({
 	title: t('brand.name'),
 	description: t('brand.description'),
 	ogTitle: t('brand.name'),
@@ -29,11 +29,11 @@ useSeoMeta(() => ({
 	ogLocale: locale.value === 'en-US' ? 'en_US' : 'zh_CN',
 	twitterTitle: t('brand.name'),
 	twitterDescription: t('brand.description')
-}))
+})) as any)
 
 // 如果当前 url 中存在 token，则表示为 简历汪 跳转过来的，则获取 token，保存到 localstorage，并获取用户个人信息，标记用户登录状态为已登录
 const isJianLiWangLogin = async () => {
-	const token = route.query.token
+	const token = route.query.token as string | undefined
 	if (token) {
 		localStorage.setItem('token', token)
 		userStore.isLogin = true

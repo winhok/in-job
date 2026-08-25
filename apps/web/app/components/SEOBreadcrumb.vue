@@ -63,7 +63,7 @@
 	</nav>
 </template>
 
-<script setup>
+<script setup lang="ts">
 /**
  * Props 定义
  */
@@ -72,7 +72,7 @@ const props = defineProps({
 	items: {
 		type: Array,
 		default: () => [],
-		validator: (items) => {
+		validator: (items: any[]) => {
 			return items.every((item) => item.name)
 		}
 	},
@@ -95,7 +95,7 @@ const { t } = useI18n()
  * 计算最终的面包屑列表
  */
 const breadcrumbs = computed(() => {
-	const list = [...props.items]
+	const list: any[] = [...(props.items as any[])]
 
 	// 如果需要显示首页且第一项不是首页，则添加首页
 	if (props.showHome && list.length > 0 && list[0].url !== '/') {

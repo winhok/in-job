@@ -1,6 +1,6 @@
 /**
  * SEO 工具函数集合
- * 
+ *
  * 提供各种 SEO 相关的辅助函数
  */
 
@@ -11,9 +11,9 @@ import { SEO, absoluteUrl } from '@/constants/seo'
  * @param {Object|Array} schema - 结构化数据对象或数组
  * @returns {Object} 可用于 useHead 的 script 配置
  */
-export const createStructuredDataScript = (schema) => {
+export const createStructuredDataScript = (schema: any) => {
 	const schemas = Array.isArray(schema) ? schema : [schema]
-	
+
 	return schemas.map(s => ({
 		type: 'application/ld+json',
 		children: JSON.stringify(s)
@@ -25,18 +25,18 @@ export const createStructuredDataScript = (schema) => {
  * @param {Object} route - Vue Router 的 route 对象
  * @returns {string} 完整 URL
  */
-export const getCurrentPageUrl = (route) => {
+export const getCurrentPageUrl = (route: any) => {
 	const path = route.path
 	const query = route.query
-	
+
 	let url = absoluteUrl(path)
-	
+
 	// 如果有查询参数，添加到 URL
 	if (Object.keys(query).length > 0) {
 		const queryString = new URLSearchParams(query).toString()
 		url += `?${queryString}`
 	}
-	
+
 	return url
 }
 
@@ -46,7 +46,7 @@ export const getCurrentPageUrl = (route) => {
  * @param {number} page - 页码
  * @returns {string} 完整 URL
  */
-export const getPaginationUrl = (basePath, page) => {
+export const getPaginationUrl = (basePath: string, page: number) => {
 	if (page <= 1) {
 		return absoluteUrl(basePath)
 	}
@@ -59,16 +59,16 @@ export const getPaginationUrl = (basePath, page) => {
  * @param {number} limit - 关键词数量限制
  * @returns {string} 逗号分隔的关键词
  */
-export const extractKeywords = (text, limit = 10) => {
+export const extractKeywords = (text: string, limit = 10) => {
 	if (!text) return ''
-	
+
 	// 简单的关键词提取（实际项目中可以使用更复杂的算法）
 	const words = text
 		.replace(/[^\u4e00-\u9fa5a-zA-Z0-9\s]/g, '') // 只保留中文、英文、数字
 		.split(/\s+/)
 		.filter(word => word.length >= 2) // 过滤太短的词
 		.slice(0, limit)
-	
+
 	return words.join(',')
 }
 
@@ -77,7 +77,7 @@ export const extractKeywords = (text, limit = 10) => {
  * @param {string} url - URL
  * @returns {boolean} 是否为外部链接
  */
-export const isExternalLink = (url) => {
+export const isExternalLink = (url: string) => {
 	if (!url) return false
 	return url.startsWith('http://') || url.startsWith('https://')
 }
@@ -87,7 +87,7 @@ export const isExternalLink = (url) => {
  * @param {string} url - URL
  * @returns {string} rel 属性值
  */
-export const getExternalLinkRel = (url) => {
+export const getExternalLinkRel = (url: string) => {
 	if (isExternalLink(url)) {
 		return 'noopener noreferrer'
 	}
@@ -97,7 +97,7 @@ export const getExternalLinkRel = (url) => {
 /**
  * 生成社交分享链接
  */
-export const generateShareLinks = (options = {}) => {
+export const generateShareLinks = (options: any = {}) => {
 	const {
 		url = SEO.siteUrl,
 		title = SEO.defaultTitle,
@@ -112,22 +112,22 @@ export const generateShareLinks = (options = {}) => {
 	return {
 		// 微信（需要扫码）
 		wechat: url,
-		
+
 		// 微博
 		weibo: `https://service.weibo.com/share/share.php?url=${encodedUrl}&title=${encodedTitle}&pic=${encodeURIComponent(image)}`,
-		
+
 		// QQ空间
 		qzone: `https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=${encodedUrl}&title=${encodedTitle}&desc=${encodedDescription}&pics=${encodeURIComponent(image)}`,
-		
+
 		// Facebook
 		facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
-		
+
 		// Twitter
 		twitter: `https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedTitle}`,
-		
+
 		// LinkedIn
 		linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`,
-		
+
 		// Email
 		email: `mailto:?subject=${encodedTitle}&body=${encodedDescription}%0A%0A${encodedUrl}`
 	}
@@ -137,7 +137,7 @@ export const generateShareLinks = (options = {}) => {
  * 生成 Open Graph 图片 URL
  * 如果使用动态 OG 图片生成服务
  */
-export const generateOGImage = (options = {}) => {
+export const generateOGImage = (options: any = {}) => {
 	const {
 		title = SEO.defaultTitle,
 		description = SEO.defaultDescription,
@@ -155,7 +155,7 @@ export const generateOGImage = (options = {}) => {
  * SEO 健康检查
  * 用于开发环境检查 SEO 配置是否完整
  */
-export const checkSEOHealth = (pageConfig = {}) => {
+export const checkSEOHealth = (pageConfig: any = {}) => {
 	const issues = []
 
 	// 检查标题
@@ -197,7 +197,7 @@ export const checkSEOHealth = (pageConfig = {}) => {
 /**
  * 格式化日期为 ISO 8601 格式（用于结构化数据）
  */
-export const formatDateForSchema = (date) => {
+export const formatDateForSchema = (date: any) => {
 	if (!date) return new Date().toISOString()
 	if (date instanceof Date) return date.toISOString()
 	return new Date(date).toISOString()
@@ -207,14 +207,14 @@ export const formatDateForSchema = (date) => {
  * 生成面包屑数据
  * 根据路由自动生成面包屑
  */
-export const generateBreadcrumbs = (route) => {
+export const generateBreadcrumbs = (route: any) => {
 	const pathSegments = route.path.split('/').filter(Boolean)
-	const breadcrumbs = [{ name: '首页', url: '/' }]
+	const breadcrumbs: Array<{ name: string; url?: string }> = [{ name: '首页', url: '/' }]
 
 	let currentPath = ''
 	pathSegments.forEach((segment, index) => {
 		currentPath += `/${segment}`
-		
+
 		// 路径名称映射（可以扩展）
 		const nameMap = {
 			'interview': '开始面试',
@@ -246,18 +246,18 @@ export const generateBreadcrumbs = (route) => {
  * 预加载关键资源
  * 用于提升页面加载性能
  */
-export const preloadResources = (resources = []) => {
+export const preloadResources = (resources: any[] = []) => {
 	return resources.map(resource => {
 		const { href, as, type, crossorigin } = resource
-		const link = {
+		const link: any = {
 			rel: 'preload',
 			href,
 			as
 		}
-		
+
 		if (type) link.type = type
 		if (crossorigin) link.crossorigin = crossorigin
-		
+
 		return link
 	})
 }
@@ -266,42 +266,42 @@ export const preloadResources = (resources = []) => {
  * 生成 Canonical URL
  * 处理查询参数、多语言等情况
  */
-export const generateCanonicalUrl = (route, options = {}) => {
+export const generateCanonicalUrl = (route: any, options: any = {}) => {
 	const {
 		ignoredParams = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'],
 		includeQuery = false
 	} = options
 
 	let path = route.path
-	
+
 	// 如果需要包含查询参数
 	if (includeQuery && Object.keys(route.query).length > 0) {
-		const filteredQuery = {}
+		const filteredQuery: Record<string, any> = {}
 		Object.keys(route.query).forEach(key => {
 			if (!ignoredParams.includes(key)) {
 				filteredQuery[key] = route.query[key]
 			}
 		})
-		
+
 		if (Object.keys(filteredQuery).length > 0) {
 			const queryString = new URLSearchParams(filteredQuery).toString()
 			path += `?${queryString}`
 		}
 	}
-	
+
 	return absoluteUrl(path)
 }
 
 /**
  * 获取页面类型（用于 Open Graph）
  */
-export const getPageType = (route) => {
+export const getPageType = (route: any) => {
 	const path = route.path
-	
+
 	if (path === '/') return 'website'
 	if (path.startsWith('/interview/report')) return 'article'
 	if (path.startsWith('/profile')) return 'profile'
-	
+
 	return 'website'
 }
 
@@ -321,4 +321,3 @@ export default {
 	generateCanonicalUrl,
 	getPageType
 }
-

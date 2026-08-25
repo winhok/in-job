@@ -238,7 +238,7 @@
 	</UModal>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { serviceHighlights, SERVICE_TAGS, REDEEM_COST } from '@/constants/vip'

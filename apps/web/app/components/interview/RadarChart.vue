@@ -91,7 +91,7 @@
 	</div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
 
 const props = defineProps({
@@ -140,7 +140,7 @@ const axisPoints = computed(() => {
 
 // 数据点坐标
 const dataPoints = computed(() => {
-	return props.data.map((item, i) => {
+	return props.data.map((item: any, i) => {
 		const angle = i * angleSlice.value - Math.PI / 2
 		// 假设分数是 0-100
 		const scoreRadius = (item.score / 100) * radius
@@ -175,4 +175,3 @@ const labelPoints = computed(() => {
 		'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 </style>
-

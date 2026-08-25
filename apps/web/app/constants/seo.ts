@@ -3,7 +3,7 @@
  * 适配搜索引擎：Google、Bing（必应）、Baidu（百度）、360搜索
  *
  * 使用方式：
- * 1. 直接在 nuxt.config.js 中使用
+ * 1. 直接在 nuxt.config.ts 中使用
  * 2. 在页面中通过 useSEO composable 使用
  * 3. 在组件中通过 useHead 使用
  */
@@ -198,7 +198,7 @@ export const jsonLdOrganization = (seo = SEO) => ({
  * 生成 WebPage 结构化数据
  * 用于每个具体页面
  */
-export const jsonLdWebPage = (options = {}) => {
+export const jsonLdWebPage = (options: any = {}) => {
 	const {
 		title = SEO.defaultTitle,
 		description = SEO.defaultDescription,
@@ -235,7 +235,7 @@ export const jsonLdWebPage = (options = {}) => {
  * 生成 FAQPage 结构化数据
  * 用于常见问题页面
  */
-export const jsonLdFAQPage = (faqs = []) => {
+export const jsonLdFAQPage = (faqs: any[] = []) => {
 	if (!faqs.length) return null
 
 	return {
@@ -256,7 +256,7 @@ export const jsonLdFAQPage = (faqs = []) => {
  * 生成 BreadcrumbList 结构化数据
  * 用于面包屑导航
  */
-export const jsonLdBreadcrumb = (breadcrumbs = []) => {
+export const jsonLdBreadcrumb = (breadcrumbs: any[] = []) => {
 	if (!breadcrumbs.length) return null
 
 	return {
@@ -275,7 +275,7 @@ export const jsonLdBreadcrumb = (breadcrumbs = []) => {
  * 生成 SoftwareApplication 结构化数据
  * 用于应用/软件介绍页面
  */
-export const jsonLdSoftwareApplication = (options = {}) => {
+export const jsonLdSoftwareApplication = (options: any = {}) => {
 	const {
 		name = SEO.siteName,
 		description = SEO.defaultDescription,
@@ -313,7 +313,7 @@ export const jsonLdSoftwareApplication = (options = {}) => {
  * 生成完整的 Meta 标签配置
  * 包含所有搜索引擎的特殊标签
  */
-export const generateMetaTags = (options = {}) => {
+export const generateMetaTags = (options: any = {}) => {
 	const {
 		title = SEO.defaultTitle,
 		description = SEO.defaultDescription,
@@ -426,7 +426,7 @@ export const generateMetaTags = (options = {}) => {
 /**
  * 生成 Link 标签配置
  */
-export const generateLinkTags = (options = {}) => {
+export const generateLinkTags = (options: any = {}) => {
 	const {
 		canonical = SEO.siteUrl,
 		prevPage,
@@ -434,7 +434,7 @@ export const generateLinkTags = (options = {}) => {
 		alternates = []
 	} = options
 
-	const linkTags = [
+	const linkTags: any[] = [
 		// Canonical URL（规范链接）
 		{ rel: 'canonical', href: absoluteUrl(canonical) },
 

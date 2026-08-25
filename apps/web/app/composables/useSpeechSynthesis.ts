@@ -56,7 +56,7 @@ export const useSpeechSynthesis = () => {
 			return
 		}
 
-		return new Promise((resolve, reject) => {
+		return new Promise<void>((resolve, reject) => {
 			try {
 				const utterance = new SpeechSynthesisUtterance(sentence)
 

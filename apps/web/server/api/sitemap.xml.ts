@@ -1,15 +1,15 @@
 /**
  * 动态 Sitemap 生成 API
- * 
+ *
  * 功能：
  * 1. 自动生成网站地图
  * 2. 支持多语言（如需要）
  * 3. 支持移动端标记
  * 4. 支持图片 sitemap
  * 5. 自动更新 lastmod
- * 
+ *
  * 访问地址：/api/sitemap.xml
- * 
+ *
  * 注意：
  * - 如果网站内容是动态的（如文章、产品等），应该从数据库读取
  * - 定期更新 sitemap 有利于 SEO
@@ -130,12 +130,12 @@ function generateSitemapXML(pages, siteUrl) {
 			xml += `        <lastmod>${page.lastmod}</lastmod>\n`
 			xml += `        <changefreq>${page.changefreq}</changefreq>\n`
 			xml += `        <priority>${page.priority}</priority>\n`
-			
+
 			// 移动端标记（Google 移动优先索引）
 			if (page.mobile) {
 				xml += '        <mobile:mobile/>\n'
 			}
-			
+
 			// 如果有图片，可以添加图片信息
 			if (page.images && page.images.length > 0) {
 				page.images.forEach((image) => {
@@ -150,7 +150,7 @@ function generateSitemapXML(pages, siteUrl) {
 					xml += '        </image:image>\n'
 				})
 			}
-			
+
 			xml += '    </url>'
 			return xml
 		})

@@ -484,7 +484,7 @@
 	</div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { useToast } from '#imports'
@@ -510,10 +510,10 @@ definePageMeta({
 const { t } = useI18n()
 
 useHead(() => ({ title: `${t('nav.profile')} - ${t('brand.name')}` }))
-useSeoMeta(() => ({
+useSeoMeta((() => ({
 	title: `${t('nav.profile')} - ${t('brand.name')}`,
 	description: t('seo.profileDescription')
-}))
+})) as any)
 
 // onMounted(() => {
 // 	const tab = route.query.tab

@@ -8,7 +8,7 @@
 	</div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import HomeHero from '../components/home/HomeHero.vue'
 import HomeServices from '../components/home/HomeServices.vue'
 import HomeFeatures from '../components/home/HomeFeatures.vue'

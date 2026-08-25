@@ -161,7 +161,7 @@
 	</div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
 import { useUserStore } from '@/stores/user'
 import UploadResumeModal from '@/components/profile/UploadResumeModal.vue'
@@ -311,16 +311,17 @@ const handleResumeUploaded = async () => {
 // 监听外部值变化
 watch(
 	() => props.modelValue,
-	(newValue) => {
-		if (!newValue) {
-			return
-		}
+		(newValue) => {
+			if (!newValue) {
+				return
+			}
+			const value = newValue as any
 
-		if (newValue.type === 'text') {
-			interviewStore.resumeText = newValue.text || ''
-			interviewStore.resumeId = null
-		} else if (newValue.type === 'resume') {
-			interviewStore.resumeId = newValue.resumeId
+			if (value.type === 'text') {
+				interviewStore.resumeText = value.text || ''
+				interviewStore.resumeId = null
+			} else if (value.type === 'resume') {
+				interviewStore.resumeId = value.resumeId
 			interviewStore.resumeText = ''
 		}
 	},

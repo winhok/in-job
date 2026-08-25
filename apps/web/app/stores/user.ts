@@ -32,10 +32,10 @@ export const useUserStore = defineStore('user', {
             "email": "1205507971@qq.com"
         },
 		 */
-		userInfo: {},
+		userInfo: {} as Record<string, any>,
 		isLogin: false,
 		token: '',
-		resumes: []
+		resumes: [] as any[]
 	}),
 	getters: {
 		// 是否可以添加更多简历

@@ -37,7 +37,7 @@
 	</div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onUnmounted, watch, nextTick, onMounted } from 'vue'
 import { navigateTo, useRoute, useRouter } from '#imports'
 import { useHead } from 'nuxt/app'
@@ -80,7 +80,7 @@ const { t, locale } = useI18n()
 
 // 从 URL query 中获取参数
 const currentServiceType = computed(() => {
-	const type = route.query.serviceType
+	const type = route.query.serviceType as string | undefined
 	if (
 		[SERVICE_TAGS.RESUME, SERVICE_TAGS.SPECIAL, SERVICE_TAGS.BEHAVIOR].includes(
 			type
@@ -93,7 +93,7 @@ const currentServiceType = computed(() => {
 })
 
 const currentStep = computed(() => {
-	const step = route.query.step
+	const step = route.query.step as string | undefined
 	// 有效的步骤值
 	const validSteps = ['input', 'progress', 'interview', 'complete', 'error']
 	if (validSteps.includes(step)) {
@@ -141,7 +141,7 @@ const updateQuery = (updates) => {
 		query: {
 			...route.query,
 			...updates,
-			history: isComplete ? true : route.query.history
+				history: isComplete ? (true as any) : route.query.history
 		}
 	})
 }
@@ -403,7 +403,7 @@ onMounted(() => {
 
 const initInterView = async () => {
 	// 判断是否为查看历史记录
-	const historyResultId = route.query.resultId
+	const historyResultId = route.query.resultId as string | undefined
 	const isHistory = route.query.history
 	if (historyResultId && isHistory) {
 		resultId = historyResultId

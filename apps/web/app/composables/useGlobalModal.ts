@@ -1,7 +1,7 @@
 import { computed, createApp, defineComponent, h, onMounted, ref } from 'vue'
 import { UModal, UButton, UIcon } from '#components'
 
-const buildFallbackButtons = (options = {}) => {
+const buildFallbackButtons = (options: any = {}) => {
 	if (Array.isArray(options.buttons)) {
 		return options.buttons
 	}
@@ -15,7 +15,7 @@ const createContainer = () => {
 	return container
 }
 
-const destroyContainer = (container, app) => {
+const destroyContainer = (container: HTMLElement, app: any) => {
 	if (!container) return
 	// 延迟 200 ms ，保证动画
 	setTimeout(() => {
@@ -42,7 +42,8 @@ const ModalHost = defineComponent({
 			default: null
 		}
 	},
-	setup(props) {
+	setup(rawProps) {
+		const props = rawProps as any
 		const open = ref(true)
 		const loadingIndex = ref(null)
 		const closed = ref(false)
@@ -206,10 +207,10 @@ const ModalHost = defineComponent({
 })
 
 // 全局模态框控制器管理
-const modalControllers = new Set()
+const modalControllers = new Set<any>()
 
 export const useGlobalModal = () => {
-	const showModal = (options = {}) => {
+	const showModal = (options: any = {}) => {
 		if (typeof window === 'undefined' || typeof document === 'undefined') {
 			console.warn(
 				'[useGlobalModal] Modal rendering is only available in the browser.'
@@ -218,7 +219,7 @@ export const useGlobalModal = () => {
 		}
 
 		const container = createContainer()
-		let app = null
+		let app: any = null
 
 		let controller = {
 			close: () => {}
@@ -268,8 +269,8 @@ export const useGlobalModal = () => {
 			}
 
 			// 注册其他可能需要的插件
-			if (nuxtApp.vueApp?._context?.app) {
-				const nuxtVueApp = nuxtApp.vueApp._context.app
+			if ((nuxtApp.vueApp as any)?._context?.app) {
+				const nuxtVueApp = (nuxtApp.vueApp as any)._context.app
 				// 复制插件
 				if (nuxtVueApp._plugins) {
 					nuxtVueApp._plugins.forEach((plugin) => {

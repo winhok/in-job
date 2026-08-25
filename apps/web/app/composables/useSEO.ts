@@ -1,10 +1,10 @@
 /**
  * useSEO Composable
- * 
+ *
  * 统一的 SEO 管理工具，封装了所有 SEO 相关的功能
- * 
+ *
  * 使用示例：
- * 
+ *
  * ```vue
  * <script setup>
  * // 基础使用
@@ -13,7 +13,7 @@
  *   description: '页面描述',
  *   keywords: '关键词1,关键词2'
  * })
- * 
+ *
  * // 使用结构化数据
  * useSEO({
  *   title: '面试历史',
@@ -25,7 +25,7 @@
  *     ])
  *   ]
  * })
- * 
+ *
  * // 使用面包屑
  * useSEO({
  *   title: '面试报告',
@@ -76,9 +76,9 @@ import {
  * SEO 配置 Composable
  * @param {SEOOptions} options - SEO配置选项
  */
-export const useSEO = (options = {}) => {
+export const useSEO = (options: any = {}) => {
 	const route = useRoute()
-	
+
 	// 自动配置：根据当前路由获取预设的SEO配置
 	let config = { ...options }
 	if (options.autoConfig !== false) {
@@ -168,7 +168,7 @@ export const useSEO = (options = {}) => {
 	}
 
 	// 应用 head 配置
-	useHead(headConfig)
+	useHead(headConfig as any)
 
 	// 返回配置信息（供调试或其他用途）
 	return {
@@ -195,7 +195,7 @@ export const useSimpleSEO = (title, description, keywords) => {
  * 文章页面 SEO 配置
  * 适用于博客、新闻等内容页面
  */
-export const useArticleSEO = (options = {}) => {
+export const useArticleSEO = (options: any = {}) => {
 	const {
 		title,
 		description,
@@ -224,7 +224,7 @@ export const useArticleSEO = (options = {}) => {
  * 列表页面 SEO 配置
  * 适用于有分页的列表页
  */
-export const useListSEO = (options = {}) => {
+export const useListSEO = (options: any = {}) => {
 	const {
 		title,
 		description,
@@ -274,4 +274,3 @@ export const useSEOInfo = () => {
 }
 
 export default useSEO
-

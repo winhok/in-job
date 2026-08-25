@@ -46,7 +46,7 @@ Personal WeChat public account: **程序员Sunday** (Frontend & AI content)
 ├── server/
 │   └── api/                    # Nitro server APIs (e.g. dynamic sitemap)
 ├── public/                     # Public static assets
-├── nuxt.config.js              # Nuxt/Nitro/Vite global config
+├── nuxt.config.ts              # Nuxt/Nitro/Vite global config
 └── ecosystem.config.js         # PM2 deployment config
 ```
 
@@ -84,7 +84,7 @@ Personal WeChat public account: **程序员Sunday** (Frontend & AI content)
 
 #### 5) Extended Capabilities
 
-- SEO: global head in `nuxt.config.js` + `constants/seo.js` + `useSEO`
+- SEO: global head in `nuxt.config.ts` + `constants/seo.ts` + `useSEO`
 - Resume upload: STS temporary credentials + OSS upload
 - Speech: voice input optimization + AI speech playback
 
@@ -119,7 +119,7 @@ Personal WeChat public account: **程序员Sunday** (Frontend & AI content)
 ### 1) Base URL and Proxy
 
 - default API base path: `/dev-api`
-- local dev routes through `nitro.devProxy` in `nuxt.config.js`
+- local dev routes through `nitro.devProxy` in `nuxt.config.ts`
 - production can override with `VITE_API_BASE_URL`
 
 ### 2) Auth Contract
@@ -186,11 +186,11 @@ This command copies `.env.development` to `.env` and starts Nuxt dev mode.
 
 ### 4) Backend Proxy Setup (Important)
 
-By default, `/dev-api/*` is proxied via `nitro.devProxy` in `nuxt.config.js`.
+By default, `/dev-api/*` is proxied via `nitro.devProxy` in `nuxt.config.ts`.
 Update the proxy target to your backend address:
 
 ```js
-// nuxt.config.js
+// nuxt.config.ts
 nitro: {
 	devProxy: {
 		'/dev-api/': {
@@ -206,7 +206,7 @@ Backend repository: `https://github.com/lgd8981289/ww-server`
 
 ### 5) Environment Variables
 
-Main variables used by `runtimeConfig.public` (see `nuxt.config.js`):
+Main variables used by `runtimeConfig.public` (see `nuxt.config.ts`):
 
 - `VITE_API_BASE_URL`: frontend API base path (default `/dev-api`)
 - `VITE_RESUME_PREVIEW_URL`: resume preview site URL

@@ -266,7 +266,7 @@
 	</div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
 import { useInterviewStore } from '@/stores/interview'
 import { useToast } from '#imports'
@@ -276,7 +276,7 @@ const props = defineProps({
 	serviceType: {
 		type: String,
 		default: 'resume', // 'resume' | 'special' | 'behavior'
-		validator: (value) => ['resume', 'special', 'behavior'].includes(value)
+		validator: (value: string) => ['resume', 'special', 'behavior'].includes(value)
 	}
 })
 

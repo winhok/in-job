@@ -33,7 +33,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 					return
 				}
 				// 业务错误：提示 + 抛错
-				if (process.client) {
+				if (import.meta.client) {
 					const toast = useToast()
 					if (body.code === 401) {
 						toast.add({
@@ -61,7 +61,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 			const status = response?.status
 
 			if (status === 401) {
-				if (process.client) {
+				if (import.meta.client) {
 					const toast = useToast()
 					toast.add({
 						title: nuxtApp.$i18n.t('api.unauthorized'),
@@ -75,7 +75,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 				throw createError({ statusCode: 401, statusMessage: 'Unauthorized' })
 			}
 
-			if (process.client) {
+			if (import.meta.client) {
 				const toast = useToast()
 				toast.add({
 					title:
