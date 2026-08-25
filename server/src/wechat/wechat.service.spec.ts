@@ -71,6 +71,12 @@ describe('WechatService', () => {
       }
       return Promise.resolve({ data: {} });
     });
+    getMock.mockImplementation((url: string) => {
+      if (url.endsWith('/menu/get')) {
+        return Promise.resolve({ data: { menu: { button: [] } } });
+      }
+      return Promise.resolve({ data: {} });
+    });
   });
 
   it('缓存 access token 并为每次登录生成独立二维码', async () => {
@@ -182,5 +188,35 @@ describe('WechatService', () => {
         },
       ],
     });
+  });
+
+  it('通过微信 API Mock 删除并查询公众号菜单', async () => {
+    const { service } = createService();
+
+    await expect(service.deleteMenu()).resolves.toEqual({});
+    await expect(service.getMenu()).resolves.toEqual({
+      menu: { button: [] },
+    });
+    expect(postMock).toHaveBeenCalledWith(
+      'https://api.weixin.qq.com/cgi-bin/menu/delete',
+      undefined,
+      expect.objectContaining({ timeout: 10_000 }),
+    );
+    expect(getMock).toHaveBeenCalledWith(
+      'https://api.weixin.qq.com/cgi-bin/menu/get',
+      expect.objectContaining({ timeout: 10_000 }),
+    );
+  });
+
+  it('微信菜单接口返回业务错误时拒绝继续', async () => {
+    const { service } = createService();
+    postMock.mockResolvedValueOnce({
+      data: { access_token: 'wechat-token', expires_in: 7200 },
+    });
+    postMock.mockResolvedValueOnce({
+      data: { errcode: 40001, errmsg: 'invalid credential' },
+    });
+
+    await expect(service.createMenu()).rejects.toThrow('创建公众号菜单失败');
   });
 });

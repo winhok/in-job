@@ -163,6 +163,54 @@ export default defineNuxtConfig({
 		'@nuxt/devtools',
 		['@nuxt/ui', { fonts: false }]
 	],
+	icon: {
+		provider: 'none',
+		clientBundle: {
+			scan: true,
+			icons: [
+				'heroicons:arrow-down',
+				'heroicons:arrow-left',
+				'heroicons:arrow-right',
+				'heroicons:arrow-up',
+				'heroicons:exclamation-circle',
+				'heroicons:check',
+				'heroicons:chevron-double-left',
+				'heroicons:chevron-double-right',
+				'heroicons:chevron-down',
+				'heroicons:chevron-left',
+				'heroicons:chevron-right',
+				'heroicons:chevron-up',
+				'heroicons:x-mark',
+				'heroicons:document-duplicate',
+				'heroicons:clipboard-document-check',
+				'heroicons:moon',
+				'heroicons:bars-3',
+				'heroicons:ellipsis-horizontal',
+				'heroicons:x-circle',
+				'heroicons:arrow-top-right-on-square',
+				'heroicons:eye',
+				'heroicons:eye-slash',
+				'heroicons:document',
+				'heroicons:folder',
+				'heroicons:folder-open',
+				'heroicons:hashtag',
+				'heroicons:information-circle',
+				'heroicons:sun',
+				'heroicons:arrow-path',
+				'heroicons:minus',
+				'heroicons:rectangle-group',
+				'heroicons:plus',
+				'heroicons:magnifying-glass',
+				'heroicons:stop',
+				'heroicons:star',
+				'heroicons:check-circle',
+				'heroicons:computer-desktop',
+				'heroicons:light-bulb',
+				'heroicons:arrow-up-tray',
+				'heroicons:exclamation-triangle'
+			]
+		}
+	},
 	i18n: {
 		strategy: 'no_prefix',
 		defaultLocale: 'zh-CN',
@@ -212,7 +260,8 @@ export default defineNuxtConfig({
 			// 	rewrite: (p) => p.replace(/^\/dev-api/, '')
 			// }
 			'/dev-api/': {
-				target: 'http://localhost:3000',
+				target:
+					process.env.NUXT_DEV_PROXY_TARGET || 'http://localhost:3000',
 				changeOrigin: true,
 				rewrite: (p) => p.replace(/^\/dev-api/, '')
 			}

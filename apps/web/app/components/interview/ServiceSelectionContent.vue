@@ -77,9 +77,9 @@ const props = defineProps({
 	}
 })
 
-const handleSelect = (serviceId) => {
+const handleSelect = async (serviceId) => {
 	console.log('serviceId', serviceId)
 
-	props.onSelect?.(serviceId)
+	await props.onSelect?.(serviceId)
 }
 </script>

@@ -31,8 +31,8 @@ const loadMessages = async (name) => {
 };
 
 const [zh, en] = await Promise.all([
-  loadMessages("zh-CN.js"),
-  loadMessages("en-US.js"),
+  loadMessages("zh-CN.ts"),
+  loadMessages("en-US.ts"),
 ]);
 const missingInEnglish = [...zh.keys()].filter((key) => !en.has(key));
 const missingInChinese = [...en.keys()].filter((key) => !zh.has(key));

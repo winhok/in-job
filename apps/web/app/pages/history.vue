@@ -265,6 +265,7 @@ import dayjs from 'dayjs'
 import { navigateTo } from '#imports'
 
 definePageMeta({
+	requiresAuth: true,
 	middleware: 'auth'
 })
 const { t } = useI18n()

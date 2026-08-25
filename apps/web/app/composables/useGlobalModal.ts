@@ -210,6 +210,8 @@ const ModalHost = defineComponent({
 const modalControllers = new Set<any>()
 
 export const useGlobalModal = () => {
+	const nuxtApp = useNuxtApp()
+
 	const showModal = (options: any = {}) => {
 		if (typeof window === 'undefined' || typeof document === 'undefined') {
 			console.warn(
@@ -244,8 +246,6 @@ export const useGlobalModal = () => {
 		app = createApp(vnode)
 
 		// 获取当前 Nuxt 应用实例，复用其插件和配置
-		const nuxtApp = useNuxtApp()
-
 		if (nuxtApp) {
 			// 复制全局属性和配置
 			if (nuxtApp.vueApp?.config?.globalProperties) {
@@ -258,6 +258,7 @@ export const useGlobalModal = () => {
 			if (nuxtApp.vueApp?._context?.components) {
 				Object.entries(nuxtApp.vueApp._context.components).forEach(
 					([name, component]) => {
+						if (name === 'RouterLink' || name === 'RouterView') return
 						app.component(name, component)
 					}
 				)

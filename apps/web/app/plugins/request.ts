@@ -3,6 +3,8 @@ import { useToast } from '#imports'
 
 export default defineNuxtPlugin((nuxtApp) => {
 	const config = useRuntimeConfig()
+	const userStore = useUserStore()
+	const toast = import.meta.client ? useToast() : null
 
 	// 创建全局 ofetch 实例（同构：SSR/CSR 都可用）
 	const api = $fetch.create({
@@ -12,8 +14,6 @@ export default defineNuxtPlugin((nuxtApp) => {
 
 		// ===== 请求拦截 =====
 		onRequest({ options }) {
-			const userStore = useUserStore()
-
 			const headers = new Headers(options.headers || {})
 			if (userStore.isLogin && userStore.token) {
 				headers.set('Authorization', `Bearer ${userStore.token}`)
@@ -34,16 +34,14 @@ export default defineNuxtPlugin((nuxtApp) => {
 				}
 				// 业务错误：提示 + 抛错
 				if (import.meta.client) {
-					const toast = useToast()
 					if (body.code === 401) {
-						toast.add({
+						toast?.add({
 							title: nuxtApp.$i18n.t('api.unauthorized'),
 							color: 'warning'
 						})
-						const userStore = useUserStore()
 						userStore.logout()
 					} else if (body.code === 500) {
-						toast.add({
+						toast?.add({
 							title: body.message || nuxtApp.$i18n.t('api.requestFailed'),
 							color: 'error'
 						})
@@ -62,12 +60,10 @@ export default defineNuxtPlugin((nuxtApp) => {
 
 			if (status === 401) {
 				if (import.meta.client) {
-					const toast = useToast()
-					toast.add({
+					toast?.add({
 						title: nuxtApp.$i18n.t('api.unauthorized'),
 						color: 'warning'
 					})
-					const userStore = useUserStore()
 					userStore.logout?.()
 					navigateTo({ path: '/login', replace: true })
 				}
@@ -76,8 +72,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 			}
 
 			if (import.meta.client) {
-				const toast = useToast()
-				toast.add({
+				toast?.add({
 					title:
 						response?._data?.message || nuxtApp.$i18n.t('api.networkError'),
 					color: 'error'

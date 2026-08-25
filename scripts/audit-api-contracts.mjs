@@ -23,7 +23,7 @@ const normalizePath = (path) => {
 }
 
 const frontendContracts = new Set()
-for (const file of walk(apiDirectory.pathname, '.js')) {
+for (const file of walk(apiDirectory.pathname, '.ts')) {
 	const source = readFileSync(file, 'utf8')
 	const callPattern = /(?:\$api|ssePost)\(\s*([`'"])(.*?)\1\s*,?([\s\S]*?)(?=\n\s*\}\)|\n\s*return|\n\s*export|$)/g
 	for (const match of source.matchAll(callPattern)) {

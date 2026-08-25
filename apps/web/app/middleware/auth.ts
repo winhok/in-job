@@ -1,13 +1,10 @@
-import { useUserStore } from '@/stores/user'
 import { useUIStore } from '@/stores/ui'
 
 export default defineNuxtRouteMiddleware((to) => {
-	console.log('defineNuxtRouteMiddleware~~~~')
-
 	if (!to.meta.requiresAuth) return
 
-	const userStore = useUserStore()
-	if (userStore.isLogin) return
+	const persistedUser = useCookie<{ isLogin?: boolean }>('in_job_auth')
+	if (persistedUser.value?.isLogin) return
 
 	// SSR 场景无法弹窗，直接跳转登录页
 	if (import.meta.server) {

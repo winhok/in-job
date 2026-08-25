@@ -100,7 +100,7 @@
 											<span
 												class="ml-2 text-3xl font-bold text-white tracking-tight"
 											>
-												{{ userStore.userInfo.wwCoinBalance.toFixed(2) }}
+												{{ Number(userStore.userInfo.wwCoinBalance || 0).toFixed(2) }}
 											</span>
 											<p class="mt-1 text-[11px] text-white/70">
 												<span class="text-[#f3ea8e] font-bold text-sm">{{

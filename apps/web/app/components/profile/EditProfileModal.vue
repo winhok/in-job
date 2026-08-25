@@ -73,7 +73,7 @@
 				<div>
 					<UInput
 						class="w-full"
-						icon="i-lucide-user"
+						icon="i-heroicons-user"
 						v-model="formData.username"
 						:placeholder="$t('profile.editor.username')"
 						size="lg"
@@ -84,7 +84,7 @@
 				<div>
 					<UInput
 						class="w-full"
-						icon="i-lucide-at-sign"
+						icon="i-heroicons-at-symbol"
 						v-model="formData.email"
 						:placeholder="$t('profile.editor.email')"
 						size="lg"

@@ -15,7 +15,7 @@
 			<div
 				class="rounded-full bg-emerald-500/10 p-2 text-emerald-600 leading-0"
 			>
-				<UIcon name="i-simple-icons-wechat" class="h-6 w-6" />
+				<ww-svg-icon name="wechat" class="h-6 w-6" />
 			</div>
 		</div>
 

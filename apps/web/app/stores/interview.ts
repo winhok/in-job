@@ -176,7 +176,6 @@ jd: ''
 		reset() {
 			this.currentStep = 1
 			this.selectedPosition = {}
-			;(this as any).resumeType = null
 			this.resumeId = null
 			this.resumeText = ''
 			this.resetInterview()

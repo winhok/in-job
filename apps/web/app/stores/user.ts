@@ -69,5 +69,5 @@ export const useUserStore = defineStore('user', {
 			this.resumes = resumes
 		}
 	},
-	persist: true
+	persist: false
 })

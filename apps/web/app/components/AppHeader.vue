@@ -90,7 +90,7 @@
 			</nav>
 			<div class="flex items-center gap-2">
 				<LanguageSwitcher />
-				<template v-if="!userStore.isLogin">
+				<template v-if="!hydrated || !userStore.isLogin">
 					<UButton color="gray" variant="ghost" to="/login">{{
 						$t('nav.login')
 					}}</UButton>
@@ -115,7 +115,7 @@
 				</template>
 				<!-- 外部链接：简历汪网站 -->
 				<NuxtLink
-					:to="`https://www.lgdsunday.club?token=${userStore.token}`"
+					:to="`https://www.lgdsunday.club?token=${hydrated ? userStore.token : ''}`"
 					class="text-[12px] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-50 text-primary-600 hover:bg-primary-100 hover:text-primary-700 transition-all font-medium border border-primary-200"
 					target="_blank"
 					rel="noopener noreferrer"
@@ -154,6 +154,7 @@ import interviewAvatar from '@/assets/imgs/interview.png'
 
 const userStore = useUserStore()
 const confirmLogoutOpen = ref(false)
+const hydrated = ref(false)
 const { t } = useI18n()
 
 const userMenuItems = computed(() => [
@@ -203,6 +204,7 @@ watch(
 )
 
 onMounted(() => {
+	hydrated.value = true
 	// 头部滚动阴影
 	const onScroll = () => {
 		scrolled.value = window.scrollY > 8

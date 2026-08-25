@@ -227,8 +227,7 @@ import { SEO } from '@/constants/seo'
 import { ref, computed, onMounted } from 'vue'
 import jobCatalog from '@/data/job-categories.json'
 import { useInterviewStore } from '@/stores/interview'
-import { useToast } from '#imports'
-import { navigateTo } from '#app'
+import { useRouter, useToast } from '#imports'
 import ResumeSelector from '@/components/interview/ResumeSelector.vue'
 import { useGlobalModal } from '@/composables/useGlobalModal'
 import ServiceSelectionContent from '@/components/interview/ServiceSelectionContent.vue'
@@ -259,6 +258,7 @@ interviewStore.reset()
 
 const toast = useToast()
 const globalModal = useGlobalModal()
+const router = useRouter()
 
 const searchQuery = ref('')
 const activeCategory = ref('all')
@@ -413,7 +413,7 @@ const presentServiceSelection = () => {
 		controller?.close('selected')
 
 		if (target) {
-			await navigateTo(target)
+			await router.push(target)
 		} else {
 			toast.add({
 				title: t('interview.start.unavailable'),

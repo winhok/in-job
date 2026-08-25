@@ -5,7 +5,7 @@
 	"scripts": {
 		"build": "nuxi build",
 		"typecheck": "nuxi typecheck",
-		"dev": "nuxi dev",
+		"dev": "nuxi dev --dotenv .env.development",
 		"generate": "nuxt generate",
 		"preview": "nuxt preview --port 8080",
 		"postinstall": "nuxt prepare"
