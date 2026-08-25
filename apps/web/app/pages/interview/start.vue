@@ -5,17 +5,17 @@
 		>
 			<div>
 				<h1 class="text-xl font-bold text-neutral-900 mb-1">
-					选择岗位和导入简历
+					{{ $t('interview.start.title') }}
 				</h1>
 				<p class="text-neutral-600 text-sm">
-					锁定目标岗位并导入简历，AI 将定制专属题库
+					{{ $t('interview.start.description') }}
 				</p>
 			</div>
 			<div
 				class="inline-flex items-center gap-2 text-xs text-neutral-500 justify-center"
 			>
 				<UIcon name="i-heroicons-sparkles" class="w-4 h-4 text-primary-500" />
-				一步完成岗位筛选与资料上传
+				{{ $t('interview.start.hint') }}
 			</div>
 		</div>
 
@@ -24,12 +24,14 @@
 			<div
 				class="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm flex flex-col min-h-0"
 			>
-				<h2 class="text-lg font-semibold text-neutral-900 mb-4">选择岗位</h2>
+				<h2 class="text-lg font-semibold text-neutral-900 mb-4">
+					{{ $t('interview.start.choosePosition') }}
+				</h2>
 
 				<!-- 搜索框 -->
 				<UInput
 					v-model="searchQuery"
-					placeholder="搜索岗位名称或描述..."
+					:placeholder="$t('interview.start.searchPlaceholder')"
 					icon="i-heroicons-magnifying-glass"
 					size="lg"
 					class="mb-4"
@@ -38,7 +40,9 @@
 
 				<!-- 快速分类筛选 -->
 				<div class="mb-4">
-					<p class="text-xs text-neutral-500 mb-2">快速筛选</p>
+					<p class="text-xs text-neutral-500 mb-2">
+						{{ $t('interview.start.quickFilter') }}
+					</p>
 					<div class="flex flex-wrap gap-2">
 						<UButton
 							v-for="category in categories.slice(0, 6)"
@@ -69,7 +73,11 @@
 								"
 								class="w-3.5 h-3.5 transition-transform duration-200"
 							/>
-							<span>{{ showAllCategories ? '收起' : '更多' }}</span>
+							<span>{{
+								showAllCategories
+									? $t('interview.start.collapse')
+									: $t('interview.start.more')
+							}}</span>
 							<span class="text-[10px] opacity-60 ml-0.5">
 								({{ categories.length - 6 }})
 							</span>
@@ -96,10 +104,14 @@
 				<div class="flex-1 min-h-0 overflow-hidden flex flex-col">
 					<p class="text-xs text-neutral-500 mb-2">
 						<span v-if="filteredPositions.length > 0">
-							或从下方列表中选择（{{ filteredPositions.length }} 个岗位）
+							{{
+								$t('interview.start.selectFromList', {
+									count: filteredPositions.length
+								})
+							}}
 						</span>
 						<span v-else class="text-neutral-400">
-							暂无匹配的岗位，请尝试其他搜索条件
+							{{ $t('interview.start.noMatch') }}
 						</span>
 					</p>
 					<div
@@ -168,9 +180,11 @@
 								name="i-heroicons-magnifying-glass"
 								class="w-10 h-10 text-gray-300 mx-auto mb-2"
 							/>
-							<p class="text-sm text-neutral-400">未找到匹配的岗位</p>
+							<p class="text-sm text-neutral-400">
+								{{ $t('interview.start.noMatchTitle') }}
+							</p>
 							<p class="text-xs text-neutral-400 mt-1">
-								尝试调整搜索关键词或选择其他分类
+								{{ $t('interview.start.noMatchHint') }}
 							</p>
 						</div>
 					</div>
@@ -185,7 +199,7 @@
 					<ResumeSelector>
 						<template #title>
 							<h2 class="text-lg font-semibold text-neutral-900">
-								选择简历
+								{{ $t('interview.start.chooseResume') }}
 								<span
 									class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full"
 								>
@@ -199,7 +213,7 @@
 				<!-- 下一步按钮 -->
 				<div class="pt-4 border-t border-gray-200 mt-4">
 					<UButton color="primary" size="lg" block @click="handleNext">
-						下一步：开启专项服务
+						{{ $t('interview.start.next') }}
 					</UButton>
 				</div>
 			</div>
@@ -220,6 +234,7 @@ import { useGlobalModal } from '@/composables/useGlobalModal'
 import ServiceSelectionContent from '@/components/interview/ServiceSelectionContent.vue'
 import { serviceHighlights, SERVICE_TAGS } from '@/constants/vip'
 import { useUserStore } from '@/stores/user'
+import { categoryNames, localizeJobPosition } from '@/data/job-catalog.en'
 
 definePageMeta({
 	requiresAuth: true,
@@ -227,20 +242,14 @@ definePageMeta({
 	layout: 'interview'
 })
 
-useHead({
-	title: `开启 AI 面试服务 - ${SEO.siteName}`,
-	meta: [
-		{
-			name: 'description',
-			content:
-				'选择岗位、上传简历，体验面试押题、专项面试模拟、行测+HR面试三大核心服务'
-		}
-	]
-})
-
 const emit = defineEmits(['next'])
 
 const userStore = useUserStore()
+const { t, locale } = useI18n()
+useHead(() => ({
+	title: `${t('nav.start')} - ${t('brand.name')}`,
+	meta: [{ name: 'description', content: t('seo.startDescription') }]
+}))
 
 const interviewStore = useInterviewStore()
 // 确定当前为 第一步
@@ -257,17 +266,18 @@ const showAllCategories = ref(false)
 
 const catalogCategories = jobCatalog.categories ?? []
 
-const categories = [
-	{ key: 'all', label: '全部' },
+const categories = computed(() => [
+	{ key: 'all', label: t('interview.start.all') },
 	...catalogCategories.map((category) => ({
 		key: category.key,
-		label: category.label
+		label:
+			locale.value === 'en-US' ? categoryNames[category.key] : category.label
 	}))
-]
+])
 
-const positions = ref(
+const positions = computed(() =>
 	(jobCatalog.positions ?? []).map((position, index) => ({
-		...position,
+		...localizeJobPosition(position, locale.value),
 		id: position.positionId || `position-${index}`
 	}))
 )
@@ -326,36 +336,62 @@ const canProceed = computed(() => {
 })
 
 const getCategoryLabel = (category) => {
-	const cat = categories.find((c) => c.key === category)
+	const cat = categories.value.find((c) => c.key === category)
 	return cat ? cat.label : category
 }
 
 const serviceOptionMeta = {
 	[SERVICE_TAGS.RESUME]: {
 		accent: 'bg-blue-50 text-blue-500',
-		cta: '前往' + serviceHighlights[0].title,
+		ctaKey: 'home.services.quiz',
 		badgeClass: 'text-blue-700 bg-blue-100',
-		badgeIcon: 'i-heroicons-document-text'
+		badgeIcon: 'i-heroicons-document-text',
+		badgeKey: 'home.services.prep',
+		pointKeys: [
+			'home.services.quizPoint1',
+			'home.services.quizPoint2',
+			'home.services.quizPoint3'
+		]
 	},
 	[SERVICE_TAGS.SPECIAL]: {
 		accent: 'bg-emerald-50 text-emerald-600',
-		cta: '开启' + serviceHighlights[1].title,
+		ctaKey: 'home.services.special',
 		badgeClass: 'text-emerald-700 bg-emerald-100',
-		badgeIcon: 'i-heroicons-sparkles'
+		badgeIcon: 'i-heroicons-sparkles',
+		badgeKey: 'home.services.popular',
+		pointKeys: [
+			'home.services.specialPoint1',
+			'home.services.specialPoint2',
+			'home.services.specialPoint3'
+		]
 	},
 	[SERVICE_TAGS.BEHAVIOR]: {
 		accent: 'bg-violet-50 text-violet-600',
-		cta: '进入' + serviceHighlights[2].title,
+		ctaKey: 'home.services.behavior',
 		badgeClass: 'text-violet-700 bg-violet-100',
-		badgeIcon: 'i-heroicons-chat-bubble-left-right'
+		badgeIcon: 'i-heroicons-chat-bubble-left-right',
+		badgeKey: 'home.services.assessment',
+		pointKeys: [
+			'home.services.behaviorPoint1',
+			'home.services.behaviorPoint2',
+			'home.services.behaviorPoint3'
+		]
 	}
 }
 
 const serviceOptions = computed(() =>
 	serviceHighlights.map((item) => ({
 		...item,
+		title: t(
+			`home.services.${item.id === SERVICE_TAGS.RESUME ? 'quiz' : item.id === SERVICE_TAGS.SPECIAL ? 'special' : 'behavior'}`
+		),
+		description: t(
+			`home.services.${item.id === SERVICE_TAGS.RESUME ? 'quizDesc' : item.id === SERVICE_TAGS.SPECIAL ? 'specialDesc' : 'behaviorDesc'}`
+		),
+		badge: t(serviceOptionMeta[item.id]?.badgeKey),
+		points: serviceOptionMeta[item.id]?.pointKeys.map((key) => t(key)),
 		accent: serviceOptionMeta[item.id]?.accent || 'bg-gray-100 text-gray-500',
-		cta: serviceOptionMeta[item.id]?.cta,
+		cta: t(serviceOptionMeta[item.id]?.ctaKey),
 		badgeClass: serviceOptionMeta[item.id]?.badgeClass,
 		badgeIcon: serviceOptionMeta[item.id]?.badgeIcon
 	}))
@@ -380,16 +416,16 @@ const presentServiceSelection = () => {
 			await navigateTo(target)
 		} else {
 			toast.add({
-				title: '暂未开放',
-				description: '该服务暂未配置跳转地址，请稍后再试',
+				title: t('interview.start.unavailable'),
+				description: t('interview.start.unavailableDesc'),
 				color: 'warning'
 			})
 		}
 	}
 
 	controller = globalModal.showModal({
-		title: '选择下一步体验',
-		description: '根据目标需求选择想要开启的服务形态',
+		title: t('interview.start.selectNext'),
+		description: t('interview.start.selectNextDesc'),
 		contentComponent: ServiceSelectionContent,
 		contentProps: {
 			options: serviceOptions.value,
@@ -402,8 +438,8 @@ const presentServiceSelection = () => {
 const handleNext = async () => {
 	if (!canProceed.value) {
 		globalModal.showModal({
-			title: '提示',
-			content: '选择「岗位」和「简历」后，即可开始面试'
+			title: t('interview.start.prompt'),
+			content: t('interview.start.required')
 		})
 		// toast.add({
 		// 	title: '请完成必填项',

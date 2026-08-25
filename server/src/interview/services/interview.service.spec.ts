@@ -113,6 +113,11 @@ describe('InterviewService resume quiz', () => {
       resumeQuizResultModel as never,
       aiInterviewResultModel as never,
       userModel as never,
+      {} as never,
+      {
+        retrieve: vi.fn().mockResolvedValue([]),
+        indexResume: vi.fn().mockResolvedValue(undefined),
+      } as never,
     );
 
     return {
@@ -301,6 +306,11 @@ describe('InterviewService mock interview lifecycle', () => {
       {} as never,
       aiInterviewResultModel as never,
       userModel as never,
+      {} as never,
+      {
+        retrieve: vi.fn().mockResolvedValue([]),
+        indexResume: vi.fn().mockResolvedValue(undefined),
+      } as never,
     );
     return { service, record, userModel, aiInterviewResultModel };
   }
@@ -383,6 +393,9 @@ describe('InterviewService analysis reports', () => {
     resultId?: string;
     userId?: string;
     reportStatus?: string | { $in: string[] };
+    reportAttempts?: { $lt: number };
+    nextReportRetryAt?: { $lte: Date };
+    $or?: ReportQuery[];
   }
 
   interface ReportUpdate {
@@ -399,10 +412,29 @@ describe('InterviewService analysis reports', () => {
   }) {
     const resumeResult = options?.resumeResult ?? null;
     const interviewResult = options?.interviewResult ?? null;
+    if (interviewResult && !interviewResult.status) {
+      interviewResult.status = 'completed';
+    }
     const matches = (record: MutableReport | null, query: ReportQuery) => {
       if (!record) return false;
       if (query.resultId && record.resultId !== query.resultId) return false;
       if (query.userId && record.userId !== query.userId) return false;
+      if (
+        query.reportAttempts?.$lt !== undefined &&
+        Number(record.reportAttempts || 0) >= query.reportAttempts.$lt
+      ) {
+        return false;
+      }
+      if (
+        query.nextReportRetryAt?.$lte &&
+        (!(record.nextReportRetryAt instanceof Date) ||
+          record.nextReportRetryAt > query.nextReportRetryAt.$lte)
+      ) {
+        return false;
+      }
+      if (query.$or && !query.$or.some((branch) => matches(record, branch))) {
+        return false;
+      }
       if (typeof query.reportStatus === 'string') {
         return record.reportStatus === query.reportStatus;
       }
@@ -477,6 +509,7 @@ describe('InterviewService analysis reports', () => {
       {} as never,
       resumeQuizResultModel as never,
       aiInterviewResultModel as never,
+      {} as never,
       {} as never,
     );
     return {
@@ -647,5 +680,20 @@ describe('InterviewService analysis reports', () => {
     await expect(
       service.regenerateAssessmentReport(userId, 'private-result'),
     ).rejects.toThrow('未找到该分析报告');
+  });
+
+  it('进行中的面试不能提前生成评估报告', async () => {
+    const { service } = createReportService({
+      interviewResult: {
+        resultId: 'active-result',
+        userId,
+        status: 'in_progress',
+        reportStatus: ReportStatus.PENDING,
+      },
+    });
+
+    await expect(
+      service.regenerateAssessmentReport(userId, 'active-result'),
+    ).rejects.toThrow('面试尚未结束');
   });
 });

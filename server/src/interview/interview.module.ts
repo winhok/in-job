@@ -20,10 +20,17 @@ import {
   AIInterviewResult,
   AIInterviewResultSchema,
 } from './schemas/ai-interview-result.schema';
+import { PaymentModule } from '../payment/payment.module';
+import { ResumeModule } from '../resume/resume.module';
+import { KnowledgeModule } from '../knowledge/knowledge.module';
+import { ReportRetryScheduler } from './services/report-retry.scheduler';
 
 @Module({
   imports: [
     AIModule,
+    PaymentModule,
+    ResumeModule,
+    KnowledgeModule,
     MongooseModule.forFeature([
       { name: ConsumptionRecord.name, schema: ConsumptionRecordSchema },
       { name: ResumeQuizResult.name, schema: ResumeQuizResultSchema },
@@ -37,7 +44,9 @@ import {
     ConversationContinuationService,
     DocumentParserService,
     InterviewAIService,
+    ReportRetryScheduler,
   ],
   controllers: [InterviewController],
+  exports: [InterviewAIService],
 })
 export class InterviewModule {}

@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import {
   IsEnum,
+  IsIn,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -22,6 +23,11 @@ const optionalNumber = ({ value }: { value: unknown }): unknown => {
 };
 
 export class StartMockInterviewDto {
+  @ApiProperty({ enum: ['zh-CN', 'en-US'], required: false })
+  @IsIn(['zh-CN', 'en-US'])
+  @IsOptional()
+  locale?: 'zh-CN' | 'en-US';
+
   @ApiProperty({ enum: MockInterviewType, example: MockInterviewType.SPECIAL })
   @IsEnum(MockInterviewType, { message: '面试类型无效' })
   @IsNotEmpty({ message: '面试类型不能为空' })

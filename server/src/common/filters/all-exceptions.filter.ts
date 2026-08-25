@@ -41,7 +41,6 @@ export class AllExceptionsFilter implements ExceptionFilter {
     }
     // 处理其他异常
     else if (exception instanceof Error) {
-      message = exception.message || '服务器内部错误';
       this.logger.error(
         `未处理的异常: ${exception.message}`,
         exception.stack,
@@ -52,7 +51,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     // 记录错误日志
     const messageText = Array.isArray(message) ? message[0] : message;
     this.logger.error(
-      `${request.method} ${request.url} - ${status} - ${messageText}`,
+      `${request.method} ${request.path} - ${status} - ${messageText}`,
     );
 
     // 返回统一格式的错误响应
@@ -61,7 +60,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       message: messageText,
       data: null,
       timestamp: new Date().toISOString(),
-      path: request.url,
+      path: request.path,
       ...(error !== null && { error }),
     };
 

@@ -7,6 +7,7 @@ import {
   MinLength,
   IsUUID,
   IsNumber,
+  IsIn,
   Min,
   Max,
 } from 'class-validator';
@@ -15,6 +16,11 @@ import {
  * 简历押题请求 DTO
  */
 export class ResumeQuizDto {
+  @ApiProperty({ enum: ['zh-CN', 'en-US'], required: false })
+  @IsIn(['zh-CN', 'en-US'])
+  @IsOptional()
+  locale?: 'zh-CN' | 'en-US';
+
   @ApiProperty({
     description: '公司名称',
     example: '字节跳动',
@@ -110,4 +116,44 @@ export class ResumeQuizDto {
   @IsOptional()
   @MaxLength(50)
   promptVersion?: string;
+}
+
+export class ResumeQuizResponseDto {
+  @ApiProperty()
+  resultId!: string;
+
+  @ApiProperty({ type: [Object] })
+  questions!: Array<Record<string, unknown>>;
+
+  @ApiProperty({ required: false })
+  summary?: string;
+
+  @ApiProperty()
+  remainingCount!: number;
+
+  @ApiProperty()
+  consumptionRecordId!: string;
+}
+
+export class ProgressEventDto {
+  @ApiProperty({ enum: ['progress', 'complete', 'error'] })
+  type!: 'progress' | 'complete' | 'error';
+
+  @ApiProperty({ required: false })
+  step?: number;
+
+  @ApiProperty({ required: false })
+  label?: string;
+
+  @ApiProperty({ required: false, minimum: 0, maximum: 100 })
+  progress?: number;
+
+  @ApiProperty({ required: false })
+  message?: string;
+
+  @ApiProperty({ required: false, type: ResumeQuizResponseDto })
+  data?: ResumeQuizResponseDto;
+
+  @ApiProperty({ required: false })
+  error?: string;
 }

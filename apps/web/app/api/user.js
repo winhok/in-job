@@ -3,8 +3,8 @@
  * @returns {Promise}
  */
 export const updateUserInfoAPI = ($api, body) => {
-	return $api('/user/update', {
-		method: 'POST',
+	return $api('/user/profile', {
+		method: 'PUT',
 		body
 	})
 }
@@ -21,10 +21,10 @@ export const getUserInfoAPI = ($api) => {
 /**
  * 获取支付记录
  */
-export const getPaymentRecordsAPI = ($api, body) => {
+export const getPaymentRecordsAPI = ($api, query = {}) => {
 	return $api('/user/transactions', {
 		method: 'GET',
-		body
+		query
 	})
 }
 
@@ -34,5 +34,12 @@ export const getPaymentRecordsAPI = ($api, body) => {
 export const getConsumptionRecordsAPI = ($api) => {
 	return $api('/user/consumption-records', {
 		method: 'GET'
+	})
+}
+
+export const claimShareRewardAPI = ($api) => {
+	return $api('/user/share-reward', {
+		method: 'POST',
+		body: { source: 'profile_share' }
 	})
 }

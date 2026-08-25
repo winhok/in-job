@@ -12,9 +12,11 @@
 							class="w-8 h-8 text-primary-600"
 						/>
 					</div>
-					<h2 class="text-xl font-bold text-gray-900 mb-2">需要登录</h2>
+					<h2 class="text-xl font-bold text-gray-900 mb-2">
+						{{ $t('account.requiredTitle') }}
+					</h2>
 					<p class="text-sm text-gray-600">
-						此功能需要登录后才能使用，请先登录您的账号
+						{{ $t('account.requiredDesc') }}
 					</p>
 				</div>
 
@@ -31,7 +33,7 @@
 							name="i-heroicons-arrow-right-on-rectangle"
 							class="w-5 h-5"
 						/>
-						立即登录
+						{{ $t('account.loginNow') }}
 					</UButton>
 					<UButton
 						color="gray"
@@ -41,7 +43,7 @@
 						@click="handleCancel"
 						class="justify-center"
 					>
-						取消
+						{{ $t('common.cancel') }}
 					</UButton>
 				</div>
 			</div>

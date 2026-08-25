@@ -20,11 +20,15 @@
 			</div>
 
 			<div class="space-y-2">
-				<h2 class="text-xl font-bold text-neutral-900">服务器压力过大</h2>
+				<h2 class="text-xl font-bold text-neutral-900">
+					{{ $t('interview.error.title') }}
+				</h2>
 				<p class="text-neutral-600">
-					AI 正在处理大量请求，暂时无法响应。<br />
-					<span class="text-green-600 font-medium">本次押题消费已自动返还</span
-					>，请稍后再试。
+					{{ $t('interview.error.description') }}<br />
+					<span class="text-green-600 font-medium">{{
+						$t('interview.error.refunded')
+					}}</span>
+					{{ $t('interview.error.later') }}
 				</p>
 			</div>
 
@@ -36,7 +40,7 @@
 					@click="handleRetry"
 				>
 					<UIcon name="i-heroicons-arrow-path" class="w-5 h-5 mr-2" />
-					重新押题
+					{{ $t('interview.error.retry') }}
 				</UButton>
 			</div>
 		</div>

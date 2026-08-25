@@ -157,11 +157,27 @@ export default defineNuxtConfig({
 
 	// —— 模块（保留基础依赖）——
 	modules: [
+		'@nuxtjs/i18n',
 		'@pinia/nuxt',
 		'pinia-plugin-persistedstate/nuxt',
 		'@nuxt/devtools',
 		['@nuxt/ui', { fonts: false }]
 	],
+	i18n: {
+		strategy: 'no_prefix',
+		defaultLocale: 'zh-CN',
+		langDir: 'locales',
+		locales: [
+			{ code: 'zh-CN', name: '简体中文', file: 'zh-CN.js' },
+			{ code: 'en-US', name: 'English', file: 'en-US.js' }
+		],
+		detectBrowserLanguage: {
+			useCookie: true,
+			cookieKey: 'in_job_locale',
+			fallbackLocale: 'zh-CN',
+			redirectOn: 'root'
+		}
+	},
 	colorMode: {
 		classSuffix: '', // 如果你想去掉默认的类后缀（如 dark 会变为 dark-mode）
 		preference: 'light', // 默认根据系统的颜色模式，值为 'light', 'dark' 或 'system'
@@ -181,6 +197,8 @@ export default defineNuxtConfig({
 			appVersion: process.env.npm_package_version,
 			buildTime: new Date().toISOString(),
 			apiBase: process.env.VITE_API_BASE_URL || '/dev-api',
+			ossRegion: process.env.NUXT_PUBLIC_OSS_REGION || '',
+			ossBucket: process.env.NUXT_PUBLIC_OSS_BUCKET || '',
 			resumePreviewUrl:
 				process.env.VITE_RESUME_PREVIEW_URL || 'https://lgdsunday.club/'
 		}

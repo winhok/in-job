@@ -13,15 +13,15 @@
 				</div>
 				<div>
 					<p class="text-xs uppercase tracking-[0.2em] text-white/50">
-						极简流程
+						{{ $t('login.flowLabel') }}
 					</p>
 					<h2 class="text-lg font-semibold text-white">
-						3 步完成你的 AI 面试训练
+						{{ $t('login.flowTitle') }}
 					</h2>
 				</div>
 			</div>
 			<p class="text-sm text-white/70 md:max-w-xs lg:max-w-sm">
-				一次扫码即可同步历史数据，无需繁琐配置。极简三步，即刻进入真实面试场景。
+				{{ $t('login.flowDesc') }}
 			</p>
 		</div>
 		<div class="mt-6 grid gap-4 sm:grid-cols-3">
@@ -50,23 +50,26 @@
 </template>
 
 <script setup>
-const steps = [
+import { computed } from 'vue'
+
+const { t } = useI18n()
+const steps = computed(() => [
 	{
-		title: '选择岗位与目标',
-		description: '设置目标岗位/公司，并导入简历，系统自动生成专属题集。',
+		title: t('login.step1'),
+		description: t('login.step1Desc'),
 		icon: 'i-heroicons-briefcase'
 	},
 	{
-		title: '开启多轮模拟面试',
-		description: 'AI 面试官进行追问与反问，贴近真实场景，可选语音或文本作答。',
+		title: t('login.step2'),
+		description: t('login.step2Desc'),
 		icon: 'i-heroicons-chat-bubble-left-right'
 	},
 	{
-		title: '获取结构化反馈',
-		description: '生成能力雷达、风险点与改进建议，支持导出练习计划。',
+		title: t('login.step3'),
+		description: t('login.step3Desc'),
 		icon: 'i-heroicons-presentation-chart-bar'
 	}
-] 
+])
 </script>
 
 <style scoped></style>

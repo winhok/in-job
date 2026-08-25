@@ -3,17 +3,15 @@
 		<div
 			class="rounded-lg border border-gray-100 bg-gray-50 max-h-72 overflow-auto"
 		>
-			<div
-				class="text-sm leading-relaxed whitespace-pre-wrap text-neutral-700"
-				v-html="marked.parse(interviewStore.referenceAnswer[index])"
-			></div>
+			<div class="text-sm leading-relaxed whitespace-pre-wrap text-neutral-700">
+				{{ interviewStore.referenceAnswer[index] }}
+			</div>
 		</div>
 	</div>
 </template>
 
 <script setup>
 import { useInterviewStore } from '@/stores/interview'
-import { marked } from 'marked'
 const props = defineProps({
 	questionContent: { type: String, required: true }
 })

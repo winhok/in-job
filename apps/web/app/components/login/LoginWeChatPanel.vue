@@ -7,8 +7,10 @@
 		></div>
 		<div class="flex items-center justify-between gap-4">
 			<div>
-				<h2 class="text-xl font-semibold text-neutral-900">微信登录</h2>
-				<p class="text-sm text-neutral-500">扫码或点击按钮，快速进入面试汪</p>
+				<h2 class="text-xl font-semibold text-neutral-900">
+					{{ $t('login.wechatTitle') }}
+				</h2>
+				<p class="text-sm text-neutral-500">{{ $t('login.wechatDesc') }}</p>
 			</div>
 			<div
 				class="rounded-full bg-emerald-500/10 p-2 text-emerald-600 leading-0"
@@ -27,7 +29,7 @@
 					<img
 						v-if="qrCodeUrl"
 						:src="qrCodeUrl"
-						alt="微信扫码登录二维码"
+						:alt="$t('login.qrAlt')"
 						class="relative z-10 h-full w-full rounded-2xl object-cover p-3"
 						:class="{ 'opacity-20': isExpired }"
 					/>
@@ -40,13 +42,13 @@
 							name="i-heroicons-arrow-path"
 							class="h-7 w-7 animate-spin"
 						/>
-						<span>{{ loadError || '正在生成二维码…' }}</span>
+						<span>{{ loadError || $t('login.generating') }}</span>
 					</div>
 					<div
 						v-if="isExpired && qrCodeUrl"
 						class="absolute inset-0 z-20 flex flex-col items-center justify-center rounded-2xl bg-white/90 text-sm text-neutral-600"
 					>
-						<p>二维码已过期</p>
+						<p>{{ $t('login.expired') }}</p>
 						<UButton
 							class="mt-3 text-white"
 							color="primary"
@@ -56,7 +58,7 @@
 							<template #leading>
 								<UIcon name="i-heroicons-arrow-path" />
 							</template>
-							刷新二维码
+							{{ $t('login.refresh') }}
 						</UButton>
 					</div>
 					<!-- 刷新二维码按钮 -->
@@ -65,7 +67,7 @@
 						class="absolute -bottom-3 -right-4 z-30 rounded-full border border-white bg-white p-2 shadow-md transition hover:scale-105 leading-0"
 						:disabled="isLoading"
 						@click="refreshQr"
-						aria-label="刷新二维码"
+						:aria-label="$t('login.refresh')"
 					>
 						<UIcon
 							name="i-heroicons-arrow-path"
@@ -74,13 +76,13 @@
 					</button>
 				</div>
 				<p class="text-xs text-neutral-500 mt-4">
-					使用微信扫一扫登录，{{ countDown }} 秒后二维码将自动更新。
+					{{ $t('login.countdown', { seconds: countDown }) }}
 				</p>
 				<div
 					class="inline-flex items-center gap-2 rounded-full bg-emerald-500/10 px-3 py-1 mt-4 text-xs text-emerald-600"
 				>
 					<UIcon name="i-heroicons-lock-closed" />
-					微信官方授权，账号安全无忧
+					{{ $t('login.wechatSafe') }}
 				</div>
 			</div>
 
@@ -97,9 +99,11 @@
 							name="i-heroicons-check-circle"
 							class="h-16 w-16 text-emerald-600"
 						/>
-						<p class="mt-3 text-sm text-neutral-800">扫码确认成功</p>
+						<p class="mt-3 text-sm text-neutral-800">
+							{{ $t('login.scanSuccess') }}
+						</p>
 						<p class="mt-1 text-xs text-neutral-500">
-							正在跳转到刚才浏览的页面…
+							{{ $t('login.redirecting') }}
 						</p>
 					</div>
 				</div>
@@ -111,26 +115,26 @@
 				v-model="agree"
 				name="agreement"
 				color="success"
-				aria-label="同意协议"
+				:aria-label="$t('login.agreeLabel')"
 			/>
 			<p class="leading-[20px]">
-				继续登录即表示你已阅读并同意
+				{{ $t('login.agreePrefix') }}
 				<NuxtLink
 					to="/agreement"
 					target="_blank"
 					rel="noopener noreferrer"
 					class="text-primary hover:underline"
 				>
-					《服务协议》
+					{{ $t('login.terms') }}
 				</NuxtLink>
-				和
+				{{ $t('login.and') }}
 				<NuxtLink
 					to="/policy"
 					target="_blank"
 					rel="noopener noreferrer"
 					class="text-primary hover:underline"
 				>
-					《隐私政策》
+					{{ $t('login.privacy') }}
 				</NuxtLink>
 			</p>
 		</div>
@@ -152,6 +156,7 @@ const emit = defineEmits(['refreshQr'])
 
 const userStore = useUserStore()
 const { $api } = useNuxtApp()
+const { t } = useI18n()
 
 // 二维码有效倒计时（秒）
 const countDown = ref(300)
@@ -216,7 +221,7 @@ const loadQrCode = async () => {
 	} catch {
 		qrCodeUrl.value = ''
 		qrCodeId.value = ''
-		loadError.value = '二维码生成失败，请稍后重试'
+		loadError.value = t('login.qrFailed')
 	} finally {
 		isLoading.value = false
 	}

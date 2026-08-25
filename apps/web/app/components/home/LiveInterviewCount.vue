@@ -19,8 +19,12 @@
 					<UIcon name="i-heroicons-users" class="h-5 w-5" />
 				</div>
 				<div>
-					<p class="text-xs font-medium text-neutral-500">实时在线</p>
-					<p class="text-xs text-neutral-400">正在模拟面试</p>
+					<p class="text-xs font-medium text-neutral-500">
+						{{ $t('home.live.title') }}
+					</p>
+					<p class="text-xs text-neutral-400">
+						{{ $t('home.live.description') }}
+					</p>
 				</div>
 			</div>
 
@@ -32,17 +36,21 @@
 					:class="{ 'count-pulse': countUpdated }"
 				>
 					<span
-						class="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-primary-600 via-primary-500 to-emerald-600 transition-all duration-300"
+						class="text-3xl font-extrabold text-primary-600 transition-all duration-300"
 					>
 						{{ count }}
 					</span>
-					<span class="text-sm font-semibold text-neutral-500">位同学</span>
+					<span class="text-sm font-semibold text-neutral-500">{{
+						$t('home.live.people')
+					}}</span>
 				</div>
 				<div v-else class="flex items-center gap-2">
 					<div
 						class="h-10 w-20 animate-pulse rounded-lg bg-gradient-to-r from-neutral-200 to-neutral-100"
 					></div>
-					<span class="text-sm text-neutral-400">加载中...</span>
+					<span class="text-sm text-neutral-400">{{
+						$t('common.loading')
+					}}</span>
 				</div>
 			</div>
 		</div>

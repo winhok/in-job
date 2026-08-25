@@ -1,7 +1,11 @@
 import dayjs from 'dayjs'
 import 'dayjs/locale/zh-cn'
+import 'dayjs/locale/en'
+import { watch } from 'vue'
 
 export default defineNuxtPlugin(() => {
-	// 将 dayjs 设为中文，以确保日期/月份/星期文本为中文
-	dayjs.locale('zh-cn')
+	const { locale } = useI18n()
+	watch(locale, (value) => dayjs.locale(value === 'zh-CN' ? 'zh-cn' : 'en'), {
+		immediate: true
+	})
 })

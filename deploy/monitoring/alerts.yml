@@ -1,0 +1,27 @@
+groups:
+  - name: in-job
+    rules:
+      - alert: InJobServerDown
+        expr: up{job="in-job-server"} == 0
+        for: 2m
+        labels: { severity: critical }
+        annotations:
+          summary: in-job server is unavailable
+      - alert: InJobHighErrorRate
+        expr: sum(rate(http_request_duration_seconds_count{status=~"5.."}[5m])) / clamp_min(sum(rate(http_request_duration_seconds_count[5m])), 1) > 0.05
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: HTTP 5xx rate is above 5 percent
+      - alert: InJobSlowRequests
+        expr: histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket[5m]))) > 2
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: HTTP p95 latency is above 2 seconds
+      - alert: InJobAiFailures
+        expr: sum(rate(ai_calls_total{result="error"}[10m])) > 0.1
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: AI calls are failing repeatedly

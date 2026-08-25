@@ -19,14 +19,18 @@
 				class="text-xl font-medium transition-colors duration-300"
 				:class="listening ? 'text-rose-600' : 'text-neutral-900'"
 			>
-				{{ listening ? '正在聆听...' : '准备就绪' }}
+				{{
+					listening
+						? $t('interview.voice.listening')
+						: $t('interview.voice.ready')
+				}}
 			</h3>
 			<p class="text-sm text-neutral-500">
-				^_^语音输入可能有误差，可稍后核对。<br />AI面试官也会自动纠错，请放心^_^
+				{{ $t('interview.voice.accuracy') }}
 			</p>
 			<p class="text-sm text-neutral-500" v-if="!autoStart">
-				<span v-if="!listening">按下 <UKbd>Space</UKbd> 键开始语音输入</span>
-				<span v-else>按下 <UKbd>Space</UKbd> 键暂停输入</span>
+				<span v-if="!listening">{{ $t('interview.voice.start') }}</span>
+				<span v-else>{{ $t('interview.voice.pause') }}</span>
 			</p>
 		</div>
 
@@ -38,7 +42,7 @@
 				name="i-heroicons-paper-airplane"
 				class="w-4 h-4 text-primary-500"
 			/>
-			<span>语音输入完成，按 <UKbd>Enter</UKbd> 键即可发送</span>
+			<span>{{ $t('interview.voice.send') }}</span>
 		</div>
 	</div>
 </template>
@@ -46,6 +50,7 @@
 <script setup>
 import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { SpeechRecognitionOptimizer } from '@/utils/speechRecognitionOptimizer'
+const { locale } = useI18n()
 
 const props = defineProps({
 	initialText: {
@@ -104,7 +109,7 @@ const initRecognition = () => {
 	const rec = new SR()
 
 	// 优化识别参数
-	rec.lang = 'zh-CN' // 中文识别
+	rec.lang = locale.value
 	rec.continuous = true // 持续识别
 	rec.interimResults = true // 返回临时结果
 	rec.maxAlternatives = 1 // 只获取最佳结果

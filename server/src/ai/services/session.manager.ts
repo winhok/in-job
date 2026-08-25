@@ -1,6 +1,14 @@
-import { Injectable, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  OnModuleDestroy,
+  OnModuleInit,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { PromptTemplate } from '@langchain/core/prompts';
 import { randomUUID } from 'node:crypto';
 import { Message, SessionData } from '../interfaces/message.interface';
+import { AIModelFactory } from './ai-model.factory';
 
 /**
  * 会话管理服务
@@ -16,11 +24,33 @@ import { Message, SessionData } from '../interfaces/message.interface';
  * 所以我们把它放在 AI 模块，作为通用服务供所有模块使用。
  */
 @Injectable()
-export class SessionManager {
+export class SessionManager implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(SessionManager.name);
 
   // 内存存储：sessionId → 对话历史
   private sessions = new Map<string, SessionData>();
+  private readonly summarizing = new Set<string>();
+  private cleanupTimer?: NodeJS.Timeout;
+
+  constructor(
+    private readonly aiModelFactory: AIModelFactory,
+    private readonly configService: ConfigService,
+  ) {}
+
+  onModuleInit(): void {
+    const interval = Number(
+      this.configService.get<string>('AI_SESSION_CLEANUP_INTERVAL_MS'),
+    );
+    this.cleanupTimer = setInterval(
+      () => this.cleanupExpiredSessions(),
+      Number.isFinite(interval) && interval >= 60_000 ? interval : 600_000,
+    );
+    this.cleanupTimer.unref();
+  }
+
+  onModuleDestroy(): void {
+    if (this.cleanupTimer) clearInterval(this.cleanupTimer);
+  }
 
   /**
    * 创建新会话
@@ -97,6 +127,10 @@ export class SessionManager {
     return session?.messages || [];
   }
 
+  getSession(sessionId: string): SessionData | undefined {
+    return this.sessions.get(sessionId);
+  }
+
   /**
    * 获取最近的 N 条消息（用于优化 Token 使用）
    *
@@ -130,6 +164,49 @@ export class SessionManager {
     return recentMessages;
   }
 
+  async summarizeLongConversation(sessionId: string): Promise<void> {
+    const session = this.sessions.get(sessionId);
+    if (!session || this.summarizing.has(sessionId)) return;
+    const threshold = Math.max(
+      12,
+      Number(
+        this.configService.get<string>('AI_CONVERSATION_SUMMARY_THRESHOLD'),
+      ) || 30,
+    );
+    if (session.messages.length < threshold) return;
+    const keepRecent = 6;
+    const messagesToSummarize = session.messages.slice(1, -keepRecent);
+    if (messagesToSummarize.length === 0) return;
+    this.summarizing.add(sessionId);
+    try {
+      const prompt = PromptTemplate.fromTemplate(
+        '请将以下面试辅导对话总结为不超过200字的事实摘要。保留候选人背景、目标岗位、已讨论的关键问题和仍待解决的问题。不要加入对话中没有的信息。\n\n{conversation}',
+      );
+      const response = await prompt
+        .pipe(this.aiModelFactory.createStableModel())
+        .invoke({
+          conversation: messagesToSummarize
+            .map((message) => `${message.role}: ${message.content}`)
+            .join('\n\n'),
+        });
+      const summary = this.extractText(response.content);
+      if (!summary) return;
+      session.messages = [
+        session.messages[0],
+        { role: 'system', content: `【之前对话摘要】${summary}` },
+        ...session.messages.slice(-keepRecent),
+      ];
+      session.lastActivityAt = new Date();
+      this.logger.log(`长对话已压缩: sessionId=${sessionId}`);
+    } catch (error) {
+      this.logger.warn(
+        `长对话摘要失败，回退最近消息窗口: sessionId=${sessionId}, error=${error instanceof Error ? error.message : 'unknown'}`,
+      );
+    } finally {
+      this.summarizing.delete(sessionId);
+    }
+  }
+
   /**
    * 结束会话
    *
@@ -158,5 +235,18 @@ export class SessionManager {
         this.sessions.delete(sessionId);
       }
     }
+  }
+
+  private extractText(content: unknown): string {
+    if (typeof content === 'string') return content.trim();
+    if (!Array.isArray(content)) return '';
+    return content
+      .map((part) =>
+        part && typeof part === 'object' && 'text' in part
+          ? String((part as { text: unknown }).text)
+          : '',
+      )
+      .join('')
+      .trim();
   }
 }

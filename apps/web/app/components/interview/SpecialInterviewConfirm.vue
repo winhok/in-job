@@ -4,19 +4,21 @@
 		<div class="rounded-2xl border border-gray-200 bg-gray-50/60 p-4">
 			<div class="space-y-3">
 				<div>
-					<p class="text-sm text-neutral-500 mb-1">目标岗位</p>
+					<p class="text-sm text-neutral-500 mb-1">
+						{{ $t('interview.confirm.targetRole') }}
+					</p>
 					<p class="text-base font-semibold text-neutral-900">
 						{{ interviewStore.selectedPosition.positionName }}
 					</p>
 				</div>
 				<div>
-					<label class="text-sm text-neutral-500 mb-1 block"
-						>目标公司（选填）</label
-					>
+					<label class="text-sm text-neutral-500 mb-1 block">{{
+						$t('interview.confirm.targetCompany')
+					}}</label>
 					<UInput
 						v-model="interviewStore.selectedPosition.company"
 						class="w-full"
-						placeholder="请输入公司名称，例如：字节跳动"
+						:placeholder="$t('interview.confirm.companyPlaceholder')"
 						size="lg"
 					/>
 				</div>
@@ -39,7 +41,7 @@
 						class="w-4 h-4 mt-0.5"
 						:class="serviceConfig.iconColor"
 					/>
-					<span v-html="item.text"></span>
+					<span>{{ item.text }}</span>
 				</li>
 			</ul>
 		</div>
@@ -55,7 +57,7 @@
 			{{ serviceConfig.buttonText }}
 		</UButton>
 		<UButton block v-else color="primary" size="lg" @click="handleGoToRecharge">
-			去充值
+			{{ $t('interview.confirm.recharge') }}
 		</UButton>
 
 		<!-- 余额不足提示 -->
@@ -64,7 +66,7 @@
 			class="text-center text-sm text-amber-600 bg-amber-50 rounded-lg p-3 border border-amber-200"
 		>
 			<UIcon name="i-heroicons-exclamation-triangle" class="w-4 h-4 inline" />
-			余额不足，请先充值
+			{{ $t('interview.confirm.insufficient') }}
 		</div>
 	</div>
 </template>
@@ -109,6 +111,7 @@ const props = defineProps({
 
 const globalModal = useGlobalModal()
 const interviewStore = useInterviewStore()
+const { t } = useI18n()
 
 // 服务配置映射
 const serviceConfig = computed(() => {
@@ -116,57 +119,66 @@ const serviceConfig = computed(() => {
 		[SERVICE_TAGS.RESUME]: {
 			borderColor: 'border-blue-200',
 			iconColor: 'text-blue-500',
-			buttonText: '开始押题',
+			buttonText: t('interview.confirm.startQuiz'),
 			infoItems: [
 				{
 					icon: 'i-heroicons-document-text',
-					text: '本次服务将<span class="text-blue-600 font-semibold">基于岗位 JD 生成押题清单</span>，附带示范答案与提醒。'
+					text: t('interview.confirm.quizInfo')
 				},
 				{
 					icon: 'i-heroicons-clock',
-					text: '预计生成时长：<span class="text-blue-600 font-semibold"> 5 - 7 分钟</span>。'
+					text: t('interview.confirm.quizTime')
 				},
 				{
 					icon: 'i-heroicons-credit-card',
-					text: `确认后将<strong class="text-blue-600">扣除 1 次简历押题</strong>余额（当前剩余 ${props.remainingCount} 次）。`
+					text: t('interview.confirm.deduct', {
+						name: t('home.services.quiz'),
+						count: props.remainingCount
+					})
 				}
 			]
 		},
 		[SERVICE_TAGS.SPECIAL]: {
 			borderColor: 'border-primary-200',
 			iconColor: 'text-primary-500',
-			buttonText: '开始 专项面试',
+			buttonText: t('interview.confirm.startSpecial'),
 			infoItems: [
 				{
 					icon: 'i-heroicons-bolt',
-					text: '本次服务将进行<span class="text-primary-600 font-semibold">专项技能面试模拟</span>，包含 AI 即时反馈与追问。'
+					text: t('interview.confirm.specialInfo')
 				},
 				{
 					icon: 'i-heroicons-clock',
-					text: '本次专项面试<span class="text-primary-600 font-semibold">时长约 60 ～ 90 分钟</span>，包含提问与反馈环节。'
+					text: t('interview.confirm.specialTime')
 				},
 				{
 					icon: 'i-heroicons-credit-card',
-					text: `确认后将<strong class="text-primary-600">扣除 1 次专项面试</strong>余额（当前剩余 ${props.remainingCount} 次）。`
+					text: t('interview.confirm.deduct', {
+						name: t('home.services.special'),
+						count: props.remainingCount
+					})
 				}
 			]
 		},
 		[SERVICE_TAGS.BEHAVIOR]: {
 			borderColor: 'border-purple-200',
 			iconColor: 'text-purple-500',
-			buttonText: '开始 行测 + HR 面试',
+			buttonText: t('interview.confirm.startBehavior'),
 			infoItems: [
 				{
 					icon: 'i-heroicons-chat-bubble-left-right',
-					text: '本次服务包含<span class="text-purple-600 font-semibold">行测题库与 HR 面试模拟</span>，全面评估软技能。'
+					text: t('interview.confirm.behaviorInfo')
 				},
 				{
 					icon: 'i-heroicons-clock',
-					text: '本次综合面试<span class="text-purple-600 font-semibold">时长约 45 ～ 70 分钟</span>，包含行测与 HR 问答。'
+					text: t('interview.confirm.behaviorTime')
 				},
 				{
 					icon: 'i-heroicons-credit-card',
-					text: `确认后将<strong class="text-purple-600">扣除 1 次综合面试</strong>余额（当前剩余 ${props.remainingCount} 次）。`
+					text: t('interview.confirm.deduct', {
+						name: t('home.services.behavior'),
+						count: props.remainingCount
+					})
 				}
 			]
 		}

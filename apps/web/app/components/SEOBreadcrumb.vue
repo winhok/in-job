@@ -18,8 +18,12 @@
 -->
 
 <template>
-	<nav v-if="items.length" class="breadcrumb-nav" aria-label="面包屑导航">
-		<ol class="breadcrumb-list" itemscope itemtype="https://schema.org/BreadcrumbList">
+	<nav v-if="items.length" class="breadcrumb-nav" aria-label="Breadcrumb">
+		<ol
+			class="breadcrumb-list"
+			itemscope
+			itemtype="https://schema.org/BreadcrumbList"
+		>
 			<li
 				v-for="(item, index) in items"
 				:key="index"
@@ -37,17 +41,21 @@
 				>
 					<span itemprop="name">{{ item.name }}</span>
 				</NuxtLink>
-				
+
 				<!-- 当前页（无链接） -->
 				<span v-else class="breadcrumb-current" itemprop="name">
 					{{ item.name }}
 				</span>
-				
+
 				<!-- 位置 -->
 				<meta itemprop="position" :content="String(index + 1)" />
-				
+
 				<!-- 分隔符 -->
-				<span v-if="index < items.length - 1" class="breadcrumb-separator" aria-hidden="true">
+				<span
+					v-if="index < items.length - 1"
+					class="breadcrumb-separator"
+					aria-hidden="true"
+				>
 					{{ separator }}
 				</span>
 			</li>
@@ -65,34 +73,35 @@ const props = defineProps({
 		type: Array,
 		default: () => [],
 		validator: (items) => {
-			return items.every(item => item.name)
+			return items.every((item) => item.name)
 		}
 	},
-	
+
 	// 分隔符
 	separator: {
 		type: String,
 		default: '/'
 	},
-	
+
 	// 是否显示首页
 	showHome: {
 		type: Boolean,
 		default: true
 	}
 })
+const { t } = useI18n()
 
 /**
  * 计算最终的面包屑列表
  */
 const breadcrumbs = computed(() => {
 	const list = [...props.items]
-	
+
 	// 如果需要显示首页且第一项不是首页，则添加首页
 	if (props.showHome && list.length > 0 && list[0].url !== '/') {
-		list.unshift({ name: '首页', url: '/' })
+		list.unshift({ name: t('nav.home'), url: '/' })
 	}
-	
+
 	return list
 })
 </script>
@@ -153,11 +162,11 @@ const breadcrumbs = computed(() => {
 		font-size: 0.8125rem;
 		padding: 0.5rem 0;
 	}
-	
+
 	.breadcrumb-list {
 		gap: 0.375rem;
 	}
-	
+
 	.breadcrumb-item {
 		gap: 0.375rem;
 	}
@@ -168,22 +177,21 @@ const breadcrumbs = computed(() => {
 	.breadcrumb-nav {
 		color: #9ca3af;
 	}
-	
+
 	.breadcrumb-link {
 		color: #9ca3af;
 	}
-	
+
 	.breadcrumb-link:hover {
 		color: #60a5fa;
 	}
-	
+
 	.breadcrumb-current {
 		color: #f3f4f6;
 	}
-	
+
 	.breadcrumb-separator {
 		color: #4b5563;
 	}
 }
 </style>
-

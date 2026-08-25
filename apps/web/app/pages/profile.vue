@@ -10,7 +10,9 @@
 						class="sticky top-24 rounded-2xl shadow-md hover:shadow-lg transition-all border-0 bg-white/80 backdrop-blur-sm"
 					>
 						<template #header>
-							<h2 class="text-xl font-semibold text-gray-900">个人信息</h2>
+							<h2 class="text-xl font-semibold text-gray-900">
+								{{ $t('profile.info') }}
+							</h2>
 						</template>
 						<div class="space-y-6">
 							<div class="flex flex-col items-center">
@@ -21,7 +23,9 @@
 									>
 										<UAvatar
 											:src="userStore.userInfo.avatar"
-											:alt="userStore.userInfo.username || '用户头像'"
+											:alt="
+												userStore.userInfo.username || $t('account.avatarAlt')
+											"
 											size="3xl"
 											:ui="{ rounded: 'rounded-full' }"
 										/>
@@ -38,11 +42,11 @@
 								<!-- 用户名与 ID -->
 								<div class="text-center mb-5 w-full px-4">
 									<h3 class="text-lg font-bold text-gray-900 mb-1 truncate">
-										{{ userStore.userInfo.username || '未设置昵称' }}
+										{{ userStore.userInfo.username || $t('profile.unsetName') }}
 									</h3>
 									<div
 										class="inline-flex items-center justify-center px-2.5 py-0.5 rounded-md bg-gray-100 text-xs text-gray-500 font-mono select-all hover:bg-gray-200 transition-colors"
-										title="用户 ID"
+										:title="$t('profile.userId')"
 									>
 										<span>ID: {{ userStore.userInfo._id || '-' }}</span>
 									</div>
@@ -60,7 +64,7 @@
 										name="i-heroicons-pencil-square"
 										class="w-4 h-4 mr-1.5"
 									/>
-									编辑资料
+									{{ $t('profile.edit') }}
 								</UButton>
 							</div>
 
@@ -84,50 +88,31 @@
 														name="i-heroicons-currency-dollar"
 														class="w-5 h-5 text-white/90"
 													/>
-													<p class="text-base font-semibold">账户总览</p>
+													<p class="text-base font-semibold">
+														{{ $t('profile.overview') }}
+													</p>
 												</div>
 											</div>
 										</div>
 
 										<div class="mb-2 text-xs text-white/80">
-											当前可用旺旺币余额
+											{{ $t('profile.balance') }}
 											<span
 												class="ml-2 text-3xl font-bold text-white tracking-tight"
 											>
 												{{ userStore.userInfo.wwCoinBalance.toFixed(2) }}
 											</span>
 											<p class="mt-1 text-[11px] text-white/70">
-												<span class="text-[#f3ea8e] font-bold text-sm"
-													>20 旺旺币兑换一次</span
-												>
-												{{ serviceHighlights[0].title }} /
-												{{ serviceHighlights[1].title }} /
-												{{ serviceHighlights[2].title }}
+												<span class="text-[#f3ea8e] font-bold text-sm">{{
+													$t('profile.exchangeRate')
+												}}</span>
+												{{ serviceStats.map((item) => item.label).join(' / ') }}
 											</p>
 										</div>
 
 										<div class="space-y-3 text-white mb-2">
 											<div
-												v-for="stat in [
-													{
-														label: serviceHighlights[0].title,
-														value: userStore.userInfo.resumeRemainingCount,
-														icon: 'i-heroicons-document-text',
-														desc: `剩余${serviceHighlights[0].title}次数`
-													},
-													{
-														label: serviceHighlights[1].title,
-														value: userStore.userInfo.specialRemainingCount,
-														icon: 'i-heroicons-light-bulb',
-														desc: `剩余${serviceHighlights[1].title}次数`
-													},
-													{
-														label: serviceHighlights[2].title,
-														value: userStore.userInfo.behaviorRemainingCount,
-														icon: 'i-heroicons-users',
-														desc: `剩余${serviceHighlights[2].title}次数`
-													}
-												]"
+												v-for="stat in serviceStats"
 												:key="stat.label"
 												class="flex items-center justify-between rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm px-4 py-3"
 											>
@@ -152,7 +137,7 @@
 												<p class="text-2xl font-semibold">
 													{{ stat.value }}
 													<span class="text-xs font-normal text-white/70 ml-1">
-														次
+														{{ $t('profile.times') }}
 													</span>
 												</p>
 											</div>
@@ -170,7 +155,7 @@
 													name="i-heroicons-arrow-path-rounded-square"
 													class="w-4 h-4 mr-1"
 												/>
-												旺旺币兑换
+												{{ $t('profile.redeem') }}
 											</UButton>
 											<UButton
 												variant="ghost"
@@ -182,7 +167,7 @@
 													name="i-heroicons-sparkles"
 													class="w-4 h-4 mr-1"
 												/>
-												优惠充值
+												{{ $t('profile.recharge') }}
 											</UButton>
 										</div>
 									</div>
@@ -219,7 +204,41 @@
 
 				<!-- 右侧：主要内容区域 -->
 				<div class="lg:col-span-2 space-y-6">
-					<!-- TODO：分享一次赠送 5 旺旺币-->
+					<UCard
+						class="rounded-2xl border border-indigo-100 bg-indigo-50 shadow-sm"
+					>
+						<div
+							class="flex flex-col sm:flex-row sm:items-center gap-4 justify-between"
+						>
+							<div class="flex items-center gap-3">
+								<div
+									class="w-11 h-11 rounded-xl bg-violet-100 text-violet-600 flex items-center justify-center"
+								>
+									<UIcon name="i-heroicons-share" class="w-6 h-6" />
+								</div>
+								<div>
+									<p class="font-semibold text-gray-900">
+										{{ $t('profile.shareTitle') }}
+									</p>
+									<p class="text-xs text-gray-500 mt-1">
+										{{ $t('profile.shareOnce') }}
+									</p>
+								</div>
+							</div>
+							<UButton
+								color="primary"
+								:loading="shareRewardLoading"
+								:disabled="Boolean(userStore.userInfo?.shareRewardClaimedAt)"
+								@click="handleShareReward"
+							>
+								{{
+									userStore.userInfo?.shareRewardClaimedAt
+										? $t('profile.claimed')
+										: $t('profile.shareClaim')
+								}}
+							</UButton>
+						</div>
+					</UCard>
 
 					<!-- 简历管理 -->
 					<UCard
@@ -233,7 +252,7 @@
 										class="w-5 h-5 text-primary-600"
 									/>
 									<h2 class="text-base font-semibold text-gray-900">
-										我的简历
+										{{ $t('profile.resumes') }}
 									</h2>
 									<span
 										class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full"
@@ -249,10 +268,10 @@
 										@click="isUploadResumeModalVisible = true"
 									>
 										<UIcon name="i-heroicons-plus" class="w-4 h-4 mr-1" />
-										上传简历
+										{{ $t('profile.uploadResume') }}
 									</UButton>
 									<span v-else class="text-sm text-gray-500">
-										最多上传 {{ MAX_RESUME_COUNT }} 份简历
+										{{ $t('profile.maxResumes', { count: MAX_RESUME_COUNT }) }}
 									</span>
 								</div>
 							</div>
@@ -274,7 +293,7 @@
 										class="w-5 h-5 text-primary-600"
 									/>
 									<h2 class="text-base font-semibold text-gray-900">
-										消费与充值记录
+										{{ $t('profile.records') }}
 									</h2>
 								</div>
 								<div
@@ -290,7 +309,7 @@
 										"
 										@click="activeRecordTab = 'recharge'"
 									>
-										充值记录
+										{{ $t('profile.rechargeRecords') }}
 									</button>
 									<button
 										type="button"
@@ -302,7 +321,7 @@
 										"
 										@click="activeRecordTab = 'consumption'"
 									>
-										消费记录
+										{{ $t('profile.consumptionRecords') }}
 									</button>
 								</div>
 							</div>
@@ -336,12 +355,16 @@
 											>
 												{{ record.planName }}
 												<span class="ml-2 text-xs text-gray-500">
-													{{ record.description || '暂无备注' }}
+													{{ record.description || $t('profile.noNote') }}
 												</span>
 											</p>
 
 											<p class="text-[11px] text-gray-500">
-												订单号：{{ record.outTradeNo || '—' }}
+												{{
+													$t('profile.orderNo', {
+														id: record.outTradeNo || '—'
+													})
+												}}
 											</p>
 										</div>
 										<div
@@ -355,10 +378,15 @@
 													:name="record.channel || ''"
 													class="w-4 h-4"
 												/>
-												<span
-													>金额：{{ record.amount }}
-													{{ record.channel === 'wwb' ? '币' : '元' }}</span
-												>
+												<span>{{
+													$t('profile.amount', {
+														amount: record.amount,
+														unit:
+															record.channel === 'wwb'
+																? $t('profile.coin')
+																: $t('profile.yuan')
+													})
+												}}</span>
 											</p>
 
 											<p
@@ -394,7 +422,7 @@
 													variant="subtle"
 													class="font-normal"
 												>
-													消费已返还
+													{{ $t('profile.refunded') }}
 												</UBadge>
 												<p
 													class="text-xs text-gray-500 truncate"
@@ -403,7 +431,7 @@
 											</div>
 											<p class="text-xs font-semibold flex items-center">
 												<span class="rounded font-mono text-gray-500">
-													{{ record.description || '暂无备注' }}
+													{{ record.description || $t('profile.noNote') }}
 												</span>
 											</p>
 										</div>
@@ -413,7 +441,7 @@
 											<p
 												class="inline-flex items-center gap-1 text-[11px] text-gray-500"
 											>
-												订单号：{{ record.recordId }}
+												{{ $t('profile.orderNo', { id: record.recordId }) }}
 											</p>
 											<p
 												class="inline-flex items-center gap-1 text-[11px] text-gray-500 justify-end"
@@ -445,11 +473,7 @@
 		/>
 
 		<!-- 充值弹窗 -->
-		<RechargeModal
-			v-model:open="rechargeModal"
-			:balance="userStore.walletBalance"
-			@recharge="handleRecharge"
-		/>
+		<RechargeModal v-model:open="rechargeModal" @recharge="handleRecharge" />
 
 		<!-- 旺旺币兑换服务弹窗 -->
 		<RedeemServiceModal
@@ -462,7 +486,6 @@
 
 <script setup>
 import { computed, ref } from 'vue'
-import { serviceHighlights } from '@/constants/vip'
 import { useUserStore } from '@/stores/user'
 import { useToast } from '#imports'
 import EditProfileModal from '@/components/profile/EditProfileModal.vue'
@@ -474,7 +497,8 @@ import { getResumeListAPI } from '@/api/resume'
 import {
 	getUserInfoAPI,
 	getPaymentRecordsAPI,
-	getConsumptionRecordsAPI
+	getConsumptionRecordsAPI,
+	claimShareRewardAPI
 } from '@/api/user'
 import dayjs from 'dayjs'
 import { MAX_RESUME_COUNT } from '@/constants'
@@ -483,15 +507,13 @@ definePageMeta({
 	requiresAuth: true,
 	middleware: 'auth'
 })
+const { t } = useI18n()
 
-useHead({
-	title: '个人中心 - 面试汪'
-})
-
-useSeoMeta({
-	title: '个人中心 - 面试汪',
-	description: '管理您的个人信息、旺旺币和简历'
-})
+useHead(() => ({ title: `${t('nav.profile')} - ${t('brand.name')}` }))
+useSeoMeta(() => ({
+	title: `${t('nav.profile')} - ${t('brand.name')}`,
+	description: t('seo.profileDescription')
+}))
 
 // onMounted(() => {
 // 	const tab = route.query.tab
@@ -503,12 +525,33 @@ useSeoMeta({
 const userStore = useUserStore()
 const toast = useToast()
 const { $api } = useNuxtApp()
+const serviceStats = computed(() => [
+	{
+		label: t('home.services.quiz'),
+		value: userStore.userInfo.resumeRemainingCount,
+		icon: 'i-heroicons-document-text',
+		desc: t('profile.remaining', { name: t('home.services.quiz') })
+	},
+	{
+		label: t('home.services.special'),
+		value: userStore.userInfo.specialRemainingCount,
+		icon: 'i-heroicons-light-bulb',
+		desc: t('profile.remaining', { name: t('home.services.special') })
+	},
+	{
+		label: t('home.services.behavior'),
+		value: userStore.userInfo.behaviorRemainingCount,
+		icon: 'i-heroicons-users',
+		desc: t('profile.remaining', { name: t('home.services.behavior') })
+	}
+])
 
 const editProfileModal = ref(false)
 const isUploadResumeModalVisible = ref(false)
 const rechargeModal = ref(false)
 const redeemServiceModal = ref(false)
 const activeRecordTab = ref('recharge')
+const shareRewardLoading = ref(false)
 
 /**
  * 获取用户信息
@@ -517,6 +560,40 @@ const initUserInfo = async () => {
 	userStore.userInfo = await getUserInfoAPI($api)
 }
 initUserInfo()
+
+const handleShareReward = async () => {
+	shareRewardLoading.value = true
+	try {
+		const shareData = {
+			title: `${t('brand.name')} AI`,
+			text: t('profile.shareText'),
+			url: window.location.origin
+		}
+		if (navigator.share) {
+			await navigator.share(shareData)
+		} else {
+			await navigator.clipboard.writeText(shareData.url)
+			toast.add({ title: t('profile.linkCopied'), color: 'success' })
+		}
+		const result = await claimShareRewardAPI($api)
+		userStore.updateUserInfo({
+			wwCoinBalance: result.wwCoinBalance,
+			shareRewardClaimedAt: result.claimedAt
+		})
+		toast.add({ title: t('profile.rewardReceived'), color: 'success' })
+		await getPaymentRecords()
+	} catch (error) {
+		if (error?.name !== 'AbortError') {
+			toast.add({
+				title: t('profile.rewardFailed'),
+				description: error?.message || t('profile.later'),
+				color: 'error'
+			})
+		}
+	} finally {
+		shareRewardLoading.value = false
+	}
+}
 
 // 格式化日期
 const formatDate = (date) => {
@@ -529,13 +606,13 @@ const handleProfileUpdate = async (updatedInfo) => {
 	try {
 		userStore.updateUserInfo(updatedInfo)
 		toast.add({
-			title: '更新成功',
+			title: t('profile.updateSuccess'),
 			color: 'success'
 		})
 		editProfileModal.value = false
 	} catch (error) {
 		toast.add({
-			title: '更新失败',
+			title: t('profile.updateFailed'),
 			description: error.message,
 			color: 'error'
 		})
@@ -553,7 +630,7 @@ const handleResumeUploaded = async () => {
 const handleResumeDelete = (index) => {
 	userStore.removeResume(index)
 	toast.add({
-		title: '删除成功',
+		title: t('profile.deleteSuccess'),
 		color: 'success'
 	})
 }
@@ -570,10 +647,12 @@ const handleRecharge = async () => {
  * 处理旺旺币兑换服务
  */
 const handleRedeemSuccess = (data) => {
-	// 这里只是 UI 展示，实际兑换逻辑由后续实现
 	toast.add({
-		title: '兑换成功',
-		description: `已成功兑换 ${data.serviceType}，消耗 ${data.cost} 旺旺币`,
+		title: t('profile.redeemSuccess'),
+		description: t('profile.redeemSuccessDesc', {
+			service: data.serviceType,
+			cost: data.cost
+		}),
 		color: 'success'
 	})
 	redeemServiceModal.value = false
@@ -603,12 +682,16 @@ const displayedRecords = computed(() =>
 const recordMeta = computed(() => {
 	const isRecharge = activeRecordTab.value === 'recharge'
 	return {
-		emptyText: isRecharge ? '暂无充值记录' : '暂无消费记录',
-		defaultTitle: isRecharge ? '充值' : '消费',
+		emptyText: isRecharge
+			? t('profile.emptyRecharge')
+			: t('profile.emptyConsumption'),
+		defaultTitle: isRecharge
+			? t('profile.rechargeRecords')
+			: t('profile.consumptionRecords'),
 		amountClass: isRecharge ? 'text-emerald-600' : 'text-rose-600',
 		amountPrefix: isRecharge ? '+' : '-',
 		showTypeTag: !isRecharge,
-		typeLabel: isRecharge ? '' : '消费'
+		typeLabel: isRecharge ? '' : t('profile.consumptionRecords')
 	}
 })
 
@@ -618,7 +701,17 @@ const recordMeta = computed(() => {
 const getPaymentRecords = async () => {
 	try {
 		const res = await getPaymentRecordsAPI($api)
-		paymentRecords.value = Array.isArray(res) ? res : []
+		paymentRecords.value = (res.records || [])
+			.filter(
+				(record) => record.type === 'recharge' || record.type === 'reward'
+			)
+			.map((record) => ({
+				...record,
+				outTradeNo: record.relatedOrderId,
+				planName: record.description,
+				channel: record.source,
+				paidAt: record.payData?.paidAt || record.createdAt
+			}))
 	} catch (error) {
 		paymentRecords.value = []
 		console.error('获取充值记录失败', error)

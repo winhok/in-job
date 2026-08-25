@@ -4,11 +4,19 @@
 	>
 		<div class="p-5 border-b border-gray-100 flex items-center justify-between">
 			<div>
-				<h3 class="font-bold text-neutral-900 flex items-end">AI 面试官</h3>
+				<h3 class="font-bold text-neutral-900 flex items-end">
+					{{ $t('interview.interviewer.title') }}
+				</h3>
 				<p class="text-xs text-neutral-500 mt-0.5">
-					{{ interviewStore.selectedPosition?.positionName || '通用岗位' }}（{{
-						serviceType === 'special' ? '专项面试' : '行测 + HR面试'
-					}}）
+					{{
+						interviewStore.selectedPosition?.positionName ||
+						$t('history.genericRole')
+					}}
+					({{
+						serviceType === 'special'
+							? $t('home.services.special')
+							: $t('home.services.behavior')
+					}})
 				</p>
 			</div>
 			<div class="flex flex-col justify-around h-full">
@@ -27,14 +35,21 @@
 						class="text-xs font-medium"
 						:class="isOnline ? 'text-green-600' : 'text-neutral-400'"
 					>
-						{{ isOnline ? '在线' : '离线' }}
+						{{
+							isOnline
+								? $t('interview.interviewer.online')
+								: $t('interview.interviewer.offline')
+						}}
 					</span>
 				</div>
 
 				<div class="text-xs text-neutral-500">
-					{{ isOnline ? '面试中' : '已暂停' }}：{{
-						interviewStore.interviewDuration || '00:00:00'
-					}}
+					{{
+						isOnline
+							? $t('interview.interviewer.interviewing')
+							: $t('interview.interviewer.paused')
+					}}:
+					{{ interviewStore.interviewDuration || '00:00:00' }}
 				</div>
 			</div>
 		</div>
@@ -62,7 +77,7 @@
 					></div>
 
 					<!-- SVG 面试官头像：1 -->
-					<!-- TODO：不可删除 -->
+					<!-- 备用的内联 SVG 面试官形象，保留作无图片资源时的回退设计 -->
 					<!-- <svg
 						class="w-48 h-48 relative transition-transform duration-300"
 						:class="{ 'scale-105': isSpeaking }"
@@ -558,9 +573,14 @@
 				<!-- 名称和状态 -->
 				<div class="text-center">
 					<h4 class="text-lg font-semibold text-neutral-800 mb-1">
-						{{ interviewStore.interviewerName || '正在分配面试官...' }}
+						{{
+							interviewStore.interviewerName ||
+							$t('interview.interviewer.assigning')
+						}}
 					</h4>
-					<p class="text-sm text-neutral-500 mb-2">资深技术面试官</p>
+					<p class="text-sm text-neutral-500 mb-2">
+						{{ $t('interview.interviewer.senior') }}
+					</p>
 					<div
 						class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-300"
 						:class="statusClass"
@@ -598,6 +618,7 @@ defineProps({
 })
 
 const interviewStore = useInterviewStore()
+const { t } = useI18n()
 
 // 面试官信息
 
@@ -655,9 +676,9 @@ const isSpeaking = computed(() => {
 })
 
 const statusText = computed(() => {
-	if (isSpeaking.value) return '面试官正在说话...'
-	if (isOnline.value) return '正在倾听...'
-	return '准备就绪'
+	if (isSpeaking.value) return t('interview.interviewer.speaking')
+	if (isOnline.value) return t('interview.interviewer.listening')
+	return t('interview.interviewer.ready')
 })
 
 const statusClass = computed(() => {

@@ -1,5 +1,9 @@
 <template>
-	<UModal v-model:open="isOpen" title="上传简历" :ui="{ width: 'sm:max-w-md' }">
+	<UModal
+		v-model:open="isOpen"
+		:title="$t('profile.upload.title')"
+		:ui="{ width: 'sm:max-w-md' }"
+	>
 		<template #body>
 			<div class="space-y-6 py-4">
 				<!-- 拖拽上传区域 -->
@@ -30,12 +34,12 @@
 							class="w-12 h-12 mx-auto mb-4 text-gray-400"
 						/>
 						<p class="text-sm font-medium text-gray-700 mb-1">
-							点击或拖拽文件到此处上传
+							{{ $t('profile.upload.drop') }}
 						</p>
 						<p class="text-xs text-gray-500">
-							支持 PDF、DOC、DOCX 格式，文件大小不超过 5MB
+							{{ $t('profile.upload.formats') }}
 							<br />
-							（简历最多支持 {{ MAX_RESUME_COUNT }} 份）
+							{{ $t('profile.upload.max', { count: MAX_RESUME_COUNT }) }}
 						</p>
 					</div>
 
@@ -44,7 +48,9 @@
 							name="i-heroicons-arrow-path"
 							class="w-12 h-12 mx-auto mb-4 text-primary-500 animate-spin"
 						/>
-						<p class="text-sm font-medium text-gray-700">上传中...</p>
+						<p class="text-sm font-medium text-gray-700">
+							{{ $t('profile.upload.uploading') }}
+						</p>
 					</div>
 
 					<div v-else-if="selectedFile" class="flex flex-col items-center">
@@ -65,7 +71,7 @@
 							class="mt-2"
 							@click.stop="selectedFile = null"
 						>
-							重新选择
+							{{ $t('profile.upload.reselect') }}
 						</UButton>
 					</div>
 				</div>
@@ -75,7 +81,7 @@
 		<template #footer>
 			<div class="flex gap-2 w-full justify-end">
 				<UButton color="gray" variant="ghost" @click="handleCancel">
-					取消
+					{{ $t('common.cancel') }}
 				</UButton>
 				<UButton
 					color="primary"
@@ -83,7 +89,7 @@
 					:disabled="!selectedFile"
 					@click="handleUpload"
 				>
-					上传
+					{{ $t('common.upload') }}
 				</UButton>
 			</div>
 		</template>
@@ -110,6 +116,7 @@ const emit = defineEmits(['update:open', 'uploaded'])
 const { $api } = useNuxtApp()
 const userStore = useUserStore()
 const toast = useToast()
+const { t } = useI18n()
 
 const fileInputRef = ref(null)
 const selectedFile = ref(null)
@@ -191,8 +198,8 @@ const processFile = (file) => {
 		!allowedExtensions.includes(fileExtension)
 	) {
 		toast.add({
-			title: '不支持的文件格式',
-			description: '请上传 PDF、DOC 或 DOCX 格式的文件',
+			title: t('profile.upload.unsupported'),
+			description: t('profile.upload.unsupportedDesc'),
 			color: 'error'
 		})
 		return
@@ -201,7 +208,7 @@ const processFile = (file) => {
 	// 验证文件大小（限制 5MB）
 	if (file.size > FILE_SIZE_LIMIT) {
 		toast.add({
-			title: '文件大小不能超过 5MB',
+			title: t('profile.upload.tooLarge'),
 			color: 'error'
 		})
 		return
@@ -240,8 +247,8 @@ const handleUpload = async () => {
 	if (!allowed) {
 		const seconds = Math.ceil(retryAfter / 1000)
 		toast.add({
-			title: '操作过于频繁，一分钟最多上传 3 份简历',
-			description: `请${seconds || 1}秒后再试`,
+			title: t('profile.upload.frequent'),
+			description: t('profile.upload.retrySeconds', { seconds: seconds || 1 }),
 			color: 'warning'
 		})
 		return
@@ -257,23 +264,28 @@ const handleUpload = async () => {
 		try {
 			// 因为当前凭证只具备 images 文件夹下的访问权限，所以图片需要上传到 images/xxx.xx 。否则你将得到一个 《AccessDeniedError: You have no right to access this object because of bucket acl.》 的错误
 			const fileTypeArr = file.type.split('/')
-			const fileName = `${userStore.userInfo.openid}/resumes/${Date.now()}.${
+			const userId = userStore.userInfo._id
+			if (!userId) throw new Error(t('api.unauthorized'))
+			const fileName = `${userId}/resumes/${Date.now()}-${crypto.randomUUID()}.${
 				fileTypeArr[fileTypeArr.length - 1]
 			}`
 
-			// 文件存放路径，文件
-			const res = await ossClient.put(`user-resumes/${fileName}`, file)
+			const objectKey = `user-resumes/${fileName}`
+			const res = await ossClient.put(objectKey, file)
 
 			await uploadResumeAPI($api, {
 				url: res.url,
 				resumeName: file.name,
-				uploadTime: new Date().toISOString()
+				objectKey,
+				uploadTime: new Date().toISOString(),
+				mimeType: file.type,
+				fileSize: file.size
 			})
 
 			// 简历上传成功
 			toast.add({
-				title: '上传成功',
-				description: '简历上传成功',
+				title: t('profile.upload.success'),
+				description: t('profile.upload.success'),
 				color: 'success'
 			})
 			isOpen.value = false
@@ -283,7 +295,7 @@ const handleUpload = async () => {
 			console.log('e.message', e.message)
 
 			toast.add({
-				title: '上传失败',
+				title: t('profile.upload.failed'),
 				description: e.message,
 				color: 'error'
 			})

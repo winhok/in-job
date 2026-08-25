@@ -3,13 +3,17 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { randomUUID } from 'node:crypto';
 import { ReplaySubject, Subject } from 'rxjs';
 import { SessionManager } from '../../ai/services/session.manager';
 import { User, UserDocument } from '../../user/schemas/user.schema';
+import { ResumeService } from '../../resume/resume.service';
+import { InterviewKnowledgeService } from '../../knowledge/interview-knowledge.service';
 import { ResumeQuizDto } from '../dto/resume-quiz.dto';
 import {
   ReportStatus,
@@ -81,6 +85,9 @@ export class InterviewService {
     private readonly aiInterviewResultModel: Model<AIInterviewResultDocument>,
     @InjectModel(User.name)
     private readonly userModel: Model<UserDocument>,
+    private readonly resumeService: ResumeService,
+    private readonly knowledgeService: InterviewKnowledgeService,
+    @Optional() private readonly configService?: ConfigService,
   ) {}
 
   async analyzeResume(
@@ -118,11 +125,17 @@ export class InterviewService {
   }
 
   async continueConversation(
+    userId: string,
     sessionId: string,
     userQuestion: string,
   ): Promise<string> {
     try {
+      const session = this.sessionManager.getSession(sessionId);
+      if (!session || session.userId !== userId) {
+        throw new NotFoundException('会话不存在');
+      }
       this.sessionManager.addMessage(sessionId, 'user', userQuestion);
+      await this.sessionManager.summarizeLongConversation(sessionId);
       const history = this.sessionManager.getRecentMessages(sessionId, 10);
       const aiResponse =
         await this.conversationContinuationService.continue(history);
@@ -153,10 +166,7 @@ export class InterviewService {
     const reportStatus =
       (aiInterviewResult.reportStatus as ReportStatus | undefined) ??
       ReportStatus.PENDING;
-    if (
-      reportStatus === ReportStatus.PENDING ||
-      reportStatus === ReportStatus.FAILED
-    ) {
+    if (reportStatus === ReportStatus.PENDING) {
       this.triggerAssessmentReportGeneration(userId, resultId);
     }
     if (reportStatus !== ReportStatus.COMPLETED) {
@@ -184,9 +194,20 @@ export class InterviewService {
       userId,
     });
     if (!result) throw new NotFoundException('未找到该分析报告');
+    if (result.status !== 'completed') {
+      throw new BadRequestException('面试尚未结束，不能生成评估报告');
+    }
     if ((result.reportStatus as ReportStatus) === ReportStatus.COMPLETED) {
       throw new BadRequestException('评估报告已经生成完成');
     }
+    const maxAttempts = this.reportMaxAttempts();
+    if ((result.reportAttempts || 0) >= maxAttempts) {
+      throw new BadRequestException('评估报告已达到最大重试次数');
+    }
+    await this.aiInterviewResultModel.findOneAndUpdate(
+      { resultId, userId },
+      { $set: { nextReportRetryAt: new Date() } },
+    );
     this.triggerAssessmentReportGeneration(userId, resultId);
   }
 
@@ -363,6 +384,7 @@ export class InterviewService {
       content: this.aiService.generateClosingStatement(
         session.interviewerName,
         session.candidateName,
+        session.locale,
       ),
       timestamp: new Date(),
     });
@@ -371,11 +393,249 @@ export class InterviewService {
     this.sessionsProcessingAnswer.delete(session.sessionId);
   }
 
+  async getResumeQuizHistory(
+    userId: string,
+    rawPage?: string,
+    rawLimit?: string,
+  ): Promise<{
+    records: Array<Record<string, unknown>>;
+    total: number;
+    page: number;
+    limit: number;
+  }> {
+    const { page, limit, skip } = this.normalizePagination(rawPage, rawLimit);
+    const filter = { userId, isArchived: { $ne: true } };
+    const [documents, total] = await Promise.all([
+      this.resumeQuizResultModel
+        .find(filter)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      this.resumeQuizResultModel.countDocuments(filter),
+    ]);
+
+    return {
+      records: documents.map((result) => ({
+        resultId: result.resultId,
+        status: 'success',
+        inputData: {
+          company: result.company,
+          positionName: result.position,
+          salaryRange: result.salaryRange,
+        },
+        totalQuestions: result.totalQuestions ?? result.questions.length,
+        createdAt: this.getDocumentDate(result, 'createdAt'),
+      })),
+      total,
+      page,
+      limit,
+    };
+  }
+
+  async getMockInterviewHistory(
+    userId: string,
+    interviewType: AIInterviewType,
+    rawPage?: string,
+    rawLimit?: string,
+  ): Promise<{
+    records: Array<Record<string, unknown>>;
+    total: number;
+    page: number;
+    limit: number;
+  }> {
+    const { page, limit, skip } = this.normalizePagination(rawPage, rawLimit);
+    const filter = {
+      userId,
+      interviewType,
+      isArchived: { $ne: true },
+    };
+    const [documents, total] = await Promise.all([
+      this.aiInterviewResultModel
+        .find(filter)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      this.aiInterviewResultModel.countDocuments(filter),
+    ]);
+
+    return {
+      records: documents.map((result) => ({
+        resultId: result.resultId,
+        status: result.status,
+        reportStatus: result.reportStatus,
+        inputData: {
+          company: result.company || '',
+          positionName: result.position || '',
+          salaryRange: result.salaryRange,
+        },
+        totalQuestions: result.totalQuestions,
+        answeredQuestions: result.answeredQuestions,
+        createdAt: this.getDocumentDate(result, 'createdAt'),
+        completedAt: result.completedAt,
+      })),
+      total,
+      page,
+      limit,
+    };
+  }
+
+  async getResumeQuizResult(
+    userId: string,
+    resultId: string,
+  ): Promise<Record<string, unknown>> {
+    const result = await this.resumeQuizResultModel.findOne({
+      userId,
+      resultId,
+      isArchived: { $ne: true },
+    });
+    if (!result) throw new NotFoundException('简历押题结果不存在');
+
+    return {
+      resultId: result.resultId,
+      company: result.company,
+      position: result.position,
+      salaryRange: result.salaryRange,
+      questions: result.questions,
+      summary: result.summary,
+      matchScore: result.matchScore,
+      matchLevel: result.matchLevel,
+      matchedSkills: result.matchedSkills,
+      missingSkills: result.missingSkills,
+      knowledgeGaps: result.knowledgeGaps,
+      learningPriorities: result.learningPriorities,
+      radarData: result.radarData,
+      strengths: result.strengths,
+      weaknesses: result.weaknesses,
+      interviewTips: result.interviewTips,
+      createdAt: this.getDocumentDate(result, 'createdAt'),
+    };
+  }
+
+  async getUnfinishedMockInterviews(
+    userId: string,
+  ): Promise<Array<Record<string, unknown>>> {
+    const documents = await this.aiInterviewResultModel
+      .find({ userId, status: { $in: ['in_progress', 'paused'] } })
+      .sort({ updatedAt: -1 })
+      .limit(20);
+    return documents.map((result) => ({
+      resultId: result.resultId,
+      interviewType: result.interviewType,
+      status: result.status,
+      company: result.company || '',
+      position: result.position || '',
+      totalQuestions: result.totalQuestions,
+      answeredQuestions: result.answeredQuestions,
+      pausedAt: result.pausedAt,
+      updatedAt: this.getDocumentDate(result, 'updatedAt'),
+    }));
+  }
+
+  async getMockInterviewQAResult(
+    userId: string,
+    resultId: string,
+  ): Promise<Record<string, unknown>> {
+    const result = await this.findOwnedMockInterview(userId, resultId);
+    return {
+      resultId: result.resultId,
+      interviewType: result.interviewType,
+      status: result.status,
+      questions: result.qaList.map((qa) => ({
+        question: qa.question,
+        answer: qa.answer,
+        standardAnswer: qa.standardAnswer,
+        score: qa.score,
+        starAnalysis: qa.starAnalysis,
+        aiComment: qa.aiComment,
+        highlights: qa.highlights,
+        improvements: qa.improvements,
+        askedAt: qa.askedAt,
+        answeredAt: qa.answeredAt,
+      })),
+    };
+  }
+
+  async getMockInterviewSessionHistory(
+    userId: string,
+    resultId: string,
+  ): Promise<Record<string, unknown>> {
+    const result = await this.findOwnedMockInterview(userId, resultId);
+    const session = result.sessionState
+      ? this.hydrateInterviewSession(result.sessionState)
+      : undefined;
+    const metadata = result.metadata || {};
+    const conversationHistory =
+      session?.conversationHistory ??
+      result.qaList.flatMap((qa) => [
+        {
+          role: 'interviewer',
+          content: qa.question,
+          timestamp: qa.askedAt,
+          standardAnswer: qa.standardAnswer,
+          referenceAnswer: qa.standardAnswer,
+        },
+        ...(qa.answer
+          ? [
+              {
+                role: 'candidate',
+                content: qa.answer,
+                timestamp: qa.answeredAt,
+              },
+            ]
+          : []),
+      ]);
+
+    return {
+      conversationHistory,
+      sessionInfo: {
+        resultId: result.resultId,
+        sessionId: session?.sessionId ?? result.resultId,
+        interviewerName:
+          session?.interviewerName ??
+          (typeof metadata.interviewerName === 'string'
+            ? metadata.interviewerName
+            : 'AI 面试官'),
+        position: result.position || '',
+        company: result.company || '',
+        interviewType: result.interviewType,
+        status: result.status,
+      },
+    };
+  }
+
+  private async findOwnedMockInterview(
+    userId: string,
+    resultId: string,
+  ): Promise<AIInterviewResultDocument> {
+    const result = await this.aiInterviewResultModel.findOne({
+      userId,
+      resultId,
+      isArchived: { $ne: true },
+    });
+    if (!result) throw new NotFoundException('模拟面试结果不存在');
+    return result;
+  }
+
+  private normalizePagination(
+    rawPage?: string,
+    rawLimit?: string,
+  ): { page: number; limit: number; skip: number } {
+    const parsedPage = Number(rawPage);
+    const parsedLimit = Number(rawLimit);
+    const page =
+      Number.isInteger(parsedPage) && parsedPage > 0 ? parsedPage : 1;
+    const limit =
+      Number.isInteger(parsedLimit) && parsedLimit > 0
+        ? Math.min(parsedLimit, 100)
+        : 10;
+    return { page, limit, skip: (page - 1) * limit };
+  }
+
   private triggerAssessmentReportGeneration(
     userId: string,
     resultId: string,
   ): void {
-    void this.generateAssessmentReportAsync(userId, resultId).catch(
+    void this.generateAssessmentReport(userId, resultId).catch(
       (error: unknown) => {
         this.logger.error(
           `后台评估报告任务失败: resultId=${resultId}, error=${this.getErrorMessage(error)}`,
@@ -388,21 +648,38 @@ export class InterviewService {
    * 原子认领并异步生成模拟面试评估报告。
    * 同一结果只有从 pending/failed 成功切换到 generating 的调用方会执行 AI 请求。
    */
-  private async generateAssessmentReportAsync(
+  async generateAssessmentReport(
     userId: string,
     resultId: string,
   ): Promise<void> {
     try {
+      const now = new Date();
+      const leaseMs = Math.max(
+        30_000,
+        Number(this.configService?.get<string>('REPORT_RETRY_LEASE_MS')) ||
+          300_000,
+      );
       const dbResult = await this.aiInterviewResultModel.findOneAndUpdate(
         {
           resultId,
           userId,
-          reportStatus: {
-            $in: [ReportStatus.PENDING, ReportStatus.FAILED],
-          },
+          status: 'completed',
+          reportAttempts: { $lt: this.reportMaxAttempts() },
+          $or: [
+            { reportStatus: ReportStatus.PENDING },
+            {
+              reportStatus: ReportStatus.FAILED,
+              nextReportRetryAt: { $lte: now },
+            },
+          ],
         },
         {
-          $set: { reportStatus: ReportStatus.GENERATING },
+          $set: {
+            reportStatus: ReportStatus.GENERATING,
+            lastReportAttemptAt: now,
+            reportLeaseExpiresAt: new Date(now.getTime() + leaseMs),
+          },
+          $inc: { reportAttempts: 1 },
           $unset: { reportError: 1 },
         },
         { new: true },
@@ -439,7 +716,11 @@ export class InterviewService {
         `开始异步生成评估报告: resultId=${resultId}, qaCount=${qaList.length}`,
       );
       if (qaList.length === 0) {
-        await this.saveEmptyAnswerAssessment(userId, resultId);
+        await this.saveEmptyAnswerAssessment(
+          userId,
+          resultId,
+          dbResult.reportLocale,
+        );
         return;
       }
 
@@ -469,6 +750,9 @@ export class InterviewService {
             avgAnswerLength,
             emptyAnswersCount,
           },
+          cacheScope: userId,
+          locale: dbResult.reportLocale,
+          promptVersion: dbResult.promptVersion || 'v1',
         },
       );
 
@@ -484,7 +768,11 @@ export class InterviewService {
             reportStatus: ReportStatus.COMPLETED,
             reportGeneratedAt: new Date(),
           },
-          $unset: { reportError: 1 },
+          $unset: {
+            reportError: 1,
+            nextReportRetryAt: 1,
+            reportLeaseExpiresAt: 1,
+          },
         },
       );
       this.logger.log(
@@ -492,6 +780,27 @@ export class InterviewService {
       );
     } catch (error) {
       const message = this.getErrorMessage(error);
+      const failedAt = new Date();
+      const existing = await this.aiInterviewResultModel.findOne({
+        resultId,
+        userId,
+      });
+      const attempts = Math.max(1, Number(existing?.reportAttempts) || 1);
+      const maxAttempts = this.reportMaxAttempts();
+      const baseMs = Math.max(
+        1_000,
+        Number(this.configService?.get<string>('REPORT_RETRY_BASE_MS')) ||
+          60_000,
+      );
+      const maxDelayMs = Math.max(
+        baseMs,
+        Number(this.configService?.get<string>('REPORT_RETRY_MAX_DELAY_MS')) ||
+          3_600_000,
+      );
+      const nextRetryAt = new Date(
+        failedAt.getTime() +
+          Math.min(maxDelayMs, baseMs * 2 ** Math.max(0, attempts - 1)),
+      );
       await this.aiInterviewResultModel.findOneAndUpdate(
         {
           resultId,
@@ -502,6 +811,14 @@ export class InterviewService {
           $set: {
             reportStatus: ReportStatus.FAILED,
             reportError: message,
+            reportLastFailureAt: failedAt,
+            ...(attempts < maxAttempts
+              ? { nextReportRetryAt: nextRetryAt }
+              : {}),
+          },
+          $unset: {
+            reportLeaseExpiresAt: 1,
+            ...(attempts >= maxAttempts ? { nextReportRetryAt: 1 } : {}),
           },
         },
       );
@@ -512,28 +829,58 @@ export class InterviewService {
   private async saveEmptyAnswerAssessment(
     userId: string,
     resultId: string,
+    locale: 'zh-CN' | 'en-US' = 'zh-CN',
   ): Promise<void> {
+    const english = locale === 'en-US';
     await this.aiInterviewResultModel.findOneAndUpdate(
       { resultId, userId, reportStatus: ReportStatus.GENERATING },
       {
         $set: {
           overallScore: 30,
-          overallLevel: '需提升',
-          overallComment:
-            '本次面试未能有效进行，候选人没有回答任何问题，无法评估专业能力。建议重新安排面试。',
+          overallLevel: english ? 'Needs improvement' : '需提升',
+          overallComment: english
+            ? 'There were no substantive answers in this interview, so professional competencies could not be assessed. Prepare further and try another interview.'
+            : '本次面试未能有效进行，候选人没有回答任何问题，无法评估专业能力。建议重新安排面试。',
           radarData: [
-            { dimension: '技术能力', score: 0, description: '未评估' },
-            { dimension: '项目经验', score: 0, description: '未评估' },
-            { dimension: '问题解决', score: 0, description: '未评估' },
-            { dimension: '学习能力', score: 0, description: '未评估' },
-            { dimension: '沟通表达', score: 0, description: '未评估' },
+            {
+              dimension: english ? 'Technical ability' : '技术能力',
+              score: 0,
+              description: english ? 'Not assessed' : '未评估',
+            },
+            {
+              dimension: english ? 'Project experience' : '项目经验',
+              score: 0,
+              description: english ? 'Not assessed' : '未评估',
+            },
+            {
+              dimension: english ? 'Problem solving' : '问题解决',
+              score: 0,
+              description: english ? 'Not assessed' : '未评估',
+            },
+            {
+              dimension: english ? 'Learning ability' : '学习能力',
+              score: 0,
+              description: english ? 'Not assessed' : '未评估',
+            },
+            {
+              dimension: english ? 'Communication' : '沟通表达',
+              score: 0,
+              description: english ? 'Not assessed' : '未评估',
+            },
           ],
           strengths: [],
-          weaknesses: ['未参与面试问答', '无法评估专业能力'],
+          weaknesses: english
+            ? [
+                'No interview answers were provided',
+                'Professional ability could not be assessed',
+              ]
+            : ['未参与面试问答', '无法评估专业能力'],
           improvements: [
             {
-              category: '面试准备',
-              suggestion: '建议充分准备后重新参加面试',
+              category: english ? 'Interview preparation' : '面试准备',
+              suggestion: english
+                ? 'Prepare complete examples and try the interview again.'
+                : '建议充分准备后重新参加面试',
               priority: 'high',
             },
           ],
@@ -543,10 +890,25 @@ export class InterviewService {
           reportStatus: ReportStatus.COMPLETED,
           reportGeneratedAt: new Date(),
         },
-        $unset: { reportError: 1 },
+        $unset: {
+          reportError: 1,
+          nextReportRetryAt: 1,
+          reportLeaseExpiresAt: 1,
+        },
       },
     );
     this.logger.log(`默认低分报告已生成: resultId=${resultId}`);
+  }
+
+  private reportMaxAttempts(): number {
+    return Math.max(
+      1,
+      Math.min(
+        10,
+        Number(this.configService?.get<string>('REPORT_RETRY_MAX_ATTEMPTS')) ||
+          5,
+      ),
+    );
   }
 
   private async generateResumeQuizAnalysis(
@@ -664,7 +1026,14 @@ export class InterviewService {
       }
       charged = true;
 
-      const resumeContent = this.extractMockResumeContent(dto);
+      const resumeContent = await this.extractMockResumeContent(userId, dto);
+      if (dto.resumeId) {
+        await this.knowledgeService.indexResume(
+          userId,
+          dto.resumeId,
+          resumeContent,
+        );
+      }
       const sessionId = randomUUID();
       const resultId = randomUUID();
       createdSessionId = sessionId;
@@ -693,6 +1062,7 @@ export class InterviewService {
         startTime: new Date(),
         targetDuration,
         isActive: true,
+        locale: dto.locale || 'zh-CN',
       };
       this.interviewSessions.set(sessionId, session);
 
@@ -715,6 +1085,7 @@ export class InterviewService {
         status: 'in_progress',
         consumptionRecordId: recordId,
         sessionState: session,
+        reportLocale: session.locale,
         metadata: {
           interviewerName,
           candidateName: dto.candidateName,
@@ -748,6 +1119,7 @@ export class InterviewService {
         interviewerName,
         dto.candidateName,
         dto.positionName,
+        session.locale,
       )) {
         fullOpeningStatement += chunk;
         progressSubject.next({
@@ -859,7 +1231,10 @@ export class InterviewService {
       );
 
       if (elapsedMinutes >= session.targetDuration) {
-        const closingStatement = `感谢你今天的面试表现。由于时间关系（已进行${elapsedMinutes}分钟），我们今天的面试就到这里。后续我们会进行综合评估，有结果会及时通知你。祝你生活愉快！`;
+        const closingStatement =
+          session.locale === 'en-US'
+            ? `Thank you for your time. We have reached the ${elapsedMinutes}-minute limit, so today’s interview is complete. We will now prepare your assessment report.`
+            : `感谢你今天的面试表现。由于时间关系（已进行${elapsedMinutes}分钟），我们今天的面试就到这里。后续我们会进行综合评估，有结果会及时通知你。祝你生活愉快！`;
         await this.updateInterviewAnswer(
           session.resultId!,
           session.questionCount - 1,
@@ -911,6 +1286,11 @@ export class InterviewService {
         ),
         elapsedMinutes,
         targetDuration: session.targetDuration,
+        retrievedContext: await this.knowledgeService.retrieve(
+          userId,
+          [session.positionName, session.jd, answer].filter(Boolean).join(' '),
+        ),
+        locale: session.locale,
       });
 
       let fullContent = '';
@@ -1053,16 +1433,22 @@ export class InterviewService {
     }
   }
 
-  private extractMockResumeContent(dto: StartMockInterviewDto): string {
-    if (!dto.resumeContent?.trim()) {
-      if (dto.resumeId) {
-        throw new BadRequestException(
-          '当前后端尚未接入简历ID内容查询，请改用简历文本开始面试',
-        );
-      }
-      throw new BadRequestException('请提供简历文本内容');
+  private async extractMockResumeContent(
+    userId: string,
+    dto: StartMockInterviewDto,
+  ): Promise<string> {
+    let rawContent = dto.resumeContent?.trim();
+    if (!rawContent && dto.resumeId) {
+      const resume = await this.resumeService.getOwnedResume(
+        userId,
+        dto.resumeId,
+      );
+      rawContent = await this.documentParserService.parseDocumentFromUrl(
+        resume.resumeUrl,
+      );
     }
-    const cleanedText = this.documentParserService.cleanText(dto.resumeContent);
+    if (!rawContent) throw new BadRequestException('请提供简历或简历文本');
+    const cleanedText = this.documentParserService.cleanText(rawContent);
     const validation =
       this.documentParserService.validateResumeContent(cleanedText);
     if (!validation.isValid) {
@@ -1171,6 +1557,7 @@ export class InterviewService {
         interviewerName: session.interviewerName,
         candidateName: session.candidateName,
       },
+      reportLocale: session.locale,
     });
     this.triggerAssessmentReportGeneration(session.userId, resultId);
     return resultId;
@@ -1302,6 +1689,7 @@ export class InterviewService {
           ? this.SPECIAL_INTERVIEW_MAX_DURATION
           : this.BEHAVIOR_INTERVIEW_MAX_DURATION),
       isActive: candidate.isActive ?? false,
+      locale: candidate.locale || 'zh-CN',
     };
   }
 
@@ -1326,10 +1714,15 @@ export class InterviewService {
     let consumptionRecord: ConsumptionRecordDocument | null = null;
     let charged = false;
     let stopSimulatedProgress: (() => void) | undefined;
+    const english = dto.locale === 'en-US';
 
     try {
       if (!Types.ObjectId.isValid(userId)) {
-        throw new BadRequestException('用户信息无效，请重新登录');
+        throw new BadRequestException(
+          english
+            ? 'Your session is invalid. Please sign in again.'
+            : '用户信息无效，请重新登录',
+        );
       }
 
       const cachedResult = await this.resolveIdempotentRequest(
@@ -1352,7 +1745,11 @@ export class InterviewService {
         { new: false },
       );
       if (!user) {
-        throw new BadRequestException('简历押题次数不足，请前往充值页面购买');
+        throw new BadRequestException(
+          english
+            ? 'You do not have enough question-generation credits.'
+            : '简历押题次数不足，请前往充值页面购买',
+        );
       }
       charged = true;
       this.logger.log(
@@ -1362,20 +1759,30 @@ export class InterviewService {
       this.emitProgress(
         progressSubject,
         0,
-        '📄 正在读取简历文档...',
+        english ? 'Reading your résumé…' : '📄 正在读取简历文档...',
         'prepare',
       );
       const resumeContent = await this.extractResumeContent(dto);
-      this.emitProgress(progressSubject, 5, '✅ 简历解析完成', 'prepare');
+      this.emitProgress(
+        progressSubject,
+        5,
+        english ? 'Résumé parsing complete' : '✅ 简历解析完成',
+        'prepare',
+      );
       this.emitProgress(
         progressSubject,
         10,
-        '🚀 准备就绪，即将开始 AI 生成...',
+        english
+          ? 'Ready. AI generation is starting…'
+          : '🚀 准备就绪，即将开始 AI 生成...',
         'prepare',
       );
 
       const aiStartedAt = Date.now();
-      stopSimulatedProgress = this.startSimulatedProgress(progressSubject);
+      stopSimulatedProgress = this.startSimulatedProgress(
+        progressSubject,
+        dto.locale,
+      );
       const questionsResult =
         await this.aiService.generateResumeQuizQuestionsOnly({
           company: dto.company ?? '',
@@ -1385,6 +1792,8 @@ export class InterviewService {
           jd: dto.jd,
           resumeContent,
           promptVersion: dto.promptVersion,
+          cacheScope: userId,
+          locale: dto.locale || 'zh-CN',
         });
       stopSimulatedProgress();
       stopSimulatedProgress = undefined;
@@ -1392,7 +1801,9 @@ export class InterviewService {
       this.emitProgress(
         progressSubject,
         50,
-        '✅ 面试问题生成完成，开始分析匹配度...',
+        english
+          ? 'Questions generated. Analyzing role fit…'
+          : '✅ 面试问题生成完成，开始分析匹配度...',
         'generating',
       );
       const analysisResult =
@@ -1404,13 +1815,15 @@ export class InterviewService {
           jd: dto.jd,
           resumeContent,
           promptVersion: dto.promptVersion,
+          cacheScope: userId,
+          locale: dto.locale || 'zh-CN',
         });
       const aiDuration = Date.now() - aiStartedAt;
 
       this.emitProgress(
         progressSubject,
         90,
-        '💾 正在保存生成结果...',
+        english ? 'Saving generated results…' : '💾 正在保存生成结果...',
         'saving',
       );
       await this.saveQuizResult(
@@ -1440,14 +1853,18 @@ export class InterviewService {
         },
       );
 
-      this.emitComplete(progressSubject, {
-        resultId,
-        ...questionsResult,
-        ...analysisResult,
-        remainingCount: await this.getRemainingCount(userId, 'resume'),
-        consumptionRecordId: consumptionRecord.recordId,
-        isFromCache: false,
-      });
+      this.emitComplete(
+        progressSubject,
+        {
+          resultId,
+          ...questionsResult,
+          ...analysisResult,
+          remainingCount: await this.getRemainingCount(userId, 'resume'),
+          consumptionRecordId: consumptionRecord.recordId,
+          isFromCache: false,
+        },
+        dto.locale,
+      );
     } catch (error) {
       stopSimulatedProgress?.();
       await this.handleResumeQuizFailure(
@@ -1456,7 +1873,7 @@ export class InterviewService {
         charged,
         error,
       );
-      this.emitError(progressSubject, error);
+      this.emitError(progressSubject, error, dto.locale);
     }
   }
 
@@ -1489,24 +1906,28 @@ export class InterviewService {
       throw new BadRequestException('已完成的请求缺少结果数据');
     }
 
-    this.emitComplete(progressSubject, {
-      resultId: existingResult.resultId,
-      questions: existingResult.questions,
-      summary: existingResult.summary,
-      matchScore: existingResult.matchScore,
-      matchLevel: existingResult.matchLevel,
-      matchedSkills: existingResult.matchedSkills,
-      missingSkills: existingResult.missingSkills,
-      knowledgeGaps: existingResult.knowledgeGaps,
-      learningPriorities: existingResult.learningPriorities,
-      radarData: existingResult.radarData,
-      strengths: existingResult.strengths,
-      weaknesses: existingResult.weaknesses,
-      interviewTips: existingResult.interviewTips,
-      remainingCount: await this.getRemainingCount(userId, 'resume'),
-      consumptionRecordId: existingRecord.recordId,
-      isFromCache: true,
-    });
+    this.emitComplete(
+      progressSubject,
+      {
+        resultId: existingResult.resultId,
+        questions: existingResult.questions,
+        summary: existingResult.summary,
+        matchScore: existingResult.matchScore,
+        matchLevel: existingResult.matchLevel,
+        matchedSkills: existingResult.matchedSkills,
+        missingSkills: existingResult.missingSkills,
+        knowledgeGaps: existingResult.knowledgeGaps,
+        learningPriorities: existingResult.learningPriorities,
+        radarData: existingResult.radarData,
+        strengths: existingResult.strengths,
+        weaknesses: existingResult.weaknesses,
+        interviewTips: existingResult.interviewTips,
+        remainingCount: await this.getRemainingCount(userId, 'resume'),
+        consumptionRecordId: existingRecord.recordId,
+        isFromCache: true,
+      },
+      dto.locale,
+    );
     return true;
   }
 
@@ -1648,6 +2069,7 @@ export class InterviewService {
       consumptionRecordId,
       aiModel: 'deepseek-chat',
       promptVersion: dto.promptVersion ?? 'v2',
+      locale: dto.locale || 'zh-CN',
       metadata: { aiResponseTime: aiDuration },
     });
   }
@@ -1698,14 +2120,26 @@ export class InterviewService {
     }
   }
 
-  private startSimulatedProgress(subject: Subject<ProgressEvent>): () => void {
-    const messages = [
-      '🤖 AI 正在深度理解您的简历内容...',
-      '📊 AI 正在分析您的技术栈和项目经验...',
-      '🎯 AI 正在设计针对性的面试问题...',
-      '🧠 AI 正在构思场景化的追问...',
-      '✨ AI 正在优化问题和参考答案...',
-    ];
+  private startSimulatedProgress(
+    subject: Subject<ProgressEvent>,
+    locale: 'zh-CN' | 'en-US' = 'zh-CN',
+  ): () => void {
+    const messages =
+      locale === 'en-US'
+        ? [
+            'AI is analyzing your résumé in depth…',
+            'AI is reviewing your technical stack and project experience…',
+            'AI is designing role-specific interview questions…',
+            'AI is preparing realistic follow-up scenarios…',
+            'AI is refining questions and reference answers…',
+          ]
+        : [
+            '🤖 AI 正在深度理解您的简历内容...',
+            '📊 AI 正在分析您的技术栈和项目经验...',
+            '🎯 AI 正在设计针对性的面试问题...',
+            '🧠 AI 正在构思场景化的追问...',
+            '✨ AI 正在优化问题和参考答案...',
+          ];
     let index = 0;
     this.emitProgress(subject, 15, messages[0], 'generating');
     const timer = setInterval(() => {
@@ -1737,29 +2171,39 @@ export class InterviewService {
     });
   }
 
-  private emitComplete(subject: Subject<ProgressEvent>, data: unknown): void {
+  private emitComplete(
+    subject: Subject<ProgressEvent>,
+    data: unknown,
+    locale: 'zh-CN' | 'en-US' = 'zh-CN',
+  ): void {
     if (subject.closed) return;
     subject.next({
       type: 'complete',
       progress: 100,
-      label: '🎉 生成完成！',
-      message: '生成完成',
+      label: locale === 'en-US' ? 'Generation complete' : '🎉 生成完成！',
+      message: locale === 'en-US' ? 'Generation complete' : '生成完成',
       stage: 'done',
       data,
     });
     subject.complete();
   }
 
-  private emitError(subject: Subject<ProgressEvent>, error: unknown): void {
+  private emitError(
+    subject: Subject<ProgressEvent>,
+    error: unknown,
+    locale: 'zh-CN' | 'en-US' = 'zh-CN',
+  ): void {
     if (subject.closed) return;
     const message =
       error instanceof BadRequestException
         ? error.message
-        : '生成失败，请稍后重试';
+        : locale === 'en-US'
+          ? 'Generation failed. Please try again later.'
+          : '生成失败，请稍后重试';
     subject.next({
       type: 'error',
       progress: 0,
-      label: '❌ 生成失败',
+      label: locale === 'en-US' ? 'Generation failed' : '❌ 生成失败',
       message,
       error: message,
     });

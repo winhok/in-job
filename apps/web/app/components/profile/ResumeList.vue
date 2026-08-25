@@ -9,7 +9,7 @@
 				name="i-heroicons-document-text"
 				class="w-12 h-12 mx-auto mb-4 text-gray-300"
 			/>
-			暂无简历
+			{{ $t('interview.resume.empty') }}
 		</div>
 
 		<div v-else class="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -35,7 +35,7 @@
 						{{ resume.resumeName }}
 					</p>
 					<div class="flex flex-wrap items-center gap-2 text-xs text-gray-500">
-						<!-- TODO：暂时隐藏 -->
+						<!-- 求职意向字段存在时可启用以下标签 -->
 						<!-- <span
 							v-if="resume.jobInfo?.jobIntention"
 							class="px-2 py-0.5 rounded-full bg-gray-100 text-gray-600"
@@ -102,26 +102,31 @@
 						frameborder="0"
 					/>
 					<div v-else class="p-12 text-center text-gray-500">
-						<p>无法预览此文件</p>
+						<p>{{ $t('interview.resume.cannotPreview') }}</p>
 					</div>
 				</div>
 			</template>
 		</UModal>
 
 		<!-- 重命名弹窗 -->
-		<UModal v-model:open="editNameModal" title="修改简历名称">
+		<UModal
+			v-model:open="editNameModal"
+			:title="$t('profile.resumeList.rename')"
+		>
 			<template #body>
 				<div class="space-y-4">
 					<UInput
 						class="w-full"
 						v-model="editNameValue"
-						placeholder="请输入新的简历名称"
+						:placeholder="$t('profile.resumeList.renamePlaceholder')"
 						:disabled="editNameLoading"
 						@input="editNameError = ''"
 						@keyup.enter="confirmEditName"
 						autofocus
 					/>
-					<p class="text-xs text-gray-400">不超过 10 个字符，便于快速识别</p>
+					<p class="text-xs text-gray-400">
+						{{ $t('profile.resumeList.renameHint') }}
+					</p>
 				</div>
 			</template>
 			<template #footer>
@@ -132,30 +137,33 @@
 						@click="closeEditNameModal"
 						:disabled="editNameLoading"
 					>
-						取消
+						{{ $t('common.cancel') }}
 					</UButton>
 					<UButton
 						color="primary"
 						:loading="editNameLoading"
 						@click="confirmEditName"
 					>
-						保存
+						{{ $t('common.save') }}
 					</UButton>
 				</div>
 			</template>
 		</UModal>
 
 		<!-- 删除确认弹窗 -->
-		<UModal v-model:open="deleteConfirmModal" title="确认删除">
+		<UModal
+			v-model:open="deleteConfirmModal"
+			:title="$t('interview.resume.confirmDelete')"
+		>
 			<template #body>
 				<div class="py-4">
 					<p class="text-gray-700" v-if="deleteResume?.isJianLiWang">
-						【简历汪】中简历会被同步删除！
+						{{ $t('profile.resumeList.syncDelete') }}
 						<br />
-						确定要删除这份简历吗？删除后无法恢复。
+						{{ $t('interview.resume.confirmDeleteDesc') }}
 					</p>
 					<p class="text-gray-700" v-else>
-						确定要删除这份简历吗？删除后无法恢复。
+						{{ $t('interview.resume.confirmDeleteDesc') }}
 					</p>
 				</div>
 			</template>
@@ -166,9 +174,11 @@
 						variant="ghost"
 						@click="deleteConfirmModal = false"
 					>
-						取消
+						{{ $t('common.cancel') }}
 					</UButton>
-					<UButton color="error" @click="confirmDelete"> 确定删除 </UButton>
+					<UButton color="error" @click="confirmDelete">{{
+						$t('interview.resume.deleteConfirm')
+					}}</UButton>
 				</div>
 			</template>
 		</UModal>
@@ -189,6 +199,7 @@ import { useUserStore } from '@/stores/user'
 const toast = useToast()
 const userStore = useUserStore()
 const { $api } = useNuxtApp()
+const { t } = useI18n()
 /**
  * 获取简历列表
  */
@@ -252,7 +263,7 @@ const confirmDelete = async () => {
 	const res = await deleteResumeAPI($api, deleteResume.value.resumeId)
 	if (res) {
 		toast.add({
-			title: '删除成功',
+			title: t('profile.deleteSuccess'),
 			color: 'success'
 		})
 		userStore.resumes.splice(deleteIndex.value, 1)
@@ -282,16 +293,16 @@ const closeEditNameModal = () => {
 const confirmEditName = async () => {
 	const value = editNameValue.value.trim()
 	if (!value) {
-		editNameError.value = '请输入新的简历名称'
+		editNameError.value = t('profile.resumeList.nameRequired')
 		return
 	}
 	if (value.length > 10) {
-		editNameError.value = '简历名称不能超过 10 个字符'
+		editNameError.value = t('profile.resumeList.nameLong')
 		return
 	}
 
 	if (!editingResume.value) {
-		editNameError.value = '未找到需要修改的简历'
+		editNameError.value = t('profile.resumeList.notFound')
 		return
 	}
 
@@ -304,14 +315,14 @@ const confirmEditName = async () => {
 
 		userStore.resumes[editingIndex.value].resumeName = value
 		toast.add({
-			title: '修改成功',
+			title: t('profile.resumeList.renameSuccess'),
 			color: 'success'
 		})
 		closeEditNameModal()
 	} catch (error) {
 		toast.add({
-			title: '修改失败',
-			description: error?.message || '请稍后再试',
+			title: t('profile.resumeList.renameFailed'),
+			description: error?.message || t('profile.later'),
 			color: 'error'
 		})
 	} finally {
@@ -320,13 +331,15 @@ const confirmEditName = async () => {
 }
 
 const previewTitle = computed(() => {
-	if (!previewResume.value) return '简历预览'
+	if (!previewResume.value) return t('interview.resume.preview')
 
 	if (!previewResume.value.isJianLiWang) {
 		return previewResume.value?.resumeName
 	}
 
-	return previewResume.value?.resumeName + '（支持在线修改，可同步生效）'
+	return t('interview.resume.editablePreview', {
+		name: previewResume.value?.resumeName
+	})
 })
 </script>
 

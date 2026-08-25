@@ -42,7 +42,7 @@ import { ref, computed, onUnmounted, watch, nextTick, onMounted } from 'vue'
 import { navigateTo, useRoute, useRouter } from '#imports'
 import { useHead } from 'nuxt/app'
 import { SEO } from '@/constants/seo'
-import { serviceHighlights, SERVICE_TAGS } from '@/constants/vip'
+import { SERVICE_TAGS } from '@/constants/vip'
 import { useInterviewStore } from '@/stores/interview'
 import { useGlobalModal } from '@/composables/useGlobalModal'
 import SpecialInterviewConfirm from '@/components/interview/SpecialInterviewConfirm.vue'
@@ -76,6 +76,7 @@ const interviewStore = useInterviewStore()
 const userStore = useUserStore()
 const toast = useToast()
 const { $api } = useNuxtApp()
+const { t, locale } = useI18n()
 
 // 从 URL query 中获取参数
 const currentServiceType = computed(() => {
@@ -105,11 +106,11 @@ const currentStep = computed(() => {
 // 动态设置页面标题
 const pageTitle = computed(() => {
 	const titleMap = {
-		[SERVICE_TAGS.RESUME]: serviceHighlights[0].title,
-		[SERVICE_TAGS.SPECIAL]: serviceHighlights[1].title,
-		[SERVICE_TAGS.BEHAVIOR]: serviceHighlights[2].title
+		[SERVICE_TAGS.RESUME]: t('home.services.quiz'),
+		[SERVICE_TAGS.SPECIAL]: t('home.services.special'),
+		[SERVICE_TAGS.BEHAVIOR]: t('home.services.behavior')
 	}
-	return titleMap[currentServiceType.value] || '面试服务'
+	return titleMap[currentServiceType.value] || t('interview.flow.service')
 })
 
 useHead({
@@ -119,11 +120,11 @@ useHead({
 			name: 'description',
 			content: computed(() => {
 				const descMap = {
-					[SERVICE_TAGS.RESUME]: 'AI 智能简历押题，精准预测面试问题',
-					[SERVICE_TAGS.SPECIAL]: 'AI 专项面试模拟，1v1 深度对话',
-					[SERVICE_TAGS.BEHAVIOR]: '行测 + HR 面试综合评估'
+					[SERVICE_TAGS.RESUME]: t('interview.flow.resumeDesc'),
+					[SERVICE_TAGS.SPECIAL]: t('interview.flow.specialDesc'),
+					[SERVICE_TAGS.BEHAVIOR]: t('interview.flow.behaviorDesc')
 				}
-				return descMap[currentServiceType.value] || '面试服务'
+				return descMap[currentServiceType.value] || t('interview.flow.service')
 			})
 		}
 	]
@@ -151,7 +152,7 @@ const sseController = ref(null)
 // 进度条配置
 const currentProgressStep = ref({
 	progress: 0,
-	label: '正在解析岗位信息...',
+	label: t('interview.flow.parsingRole'),
 	stage: 'prepare'
 })
 const progressSteps = ref([])
@@ -211,11 +212,11 @@ const handleSubmit = () => {
 	globalModal.showModal({
 		title:
 			serviceType === SERVICE_TAGS.RESUME
-				? '准备开始简历押题'
+				? t('interview.flow.confirmResume')
 				: serviceType === SERVICE_TAGS.SPECIAL
-				? '准备开始专项面试'
-				: '准备开始行测 + HR 面试',
-		description: '请确认以下信息后再开始服务流程',
+					? t('interview.flow.confirmSpecial')
+					: t('interview.flow.confirmBehavior'),
+		description: t('interview.flow.confirmDesc'),
 		contentComponent: SpecialInterviewConfirm,
 		contentProps: {
 			serviceType: serviceType,
@@ -245,7 +246,7 @@ const startResumeQuiz = async (requestId) => {
 	// 初始化状态
 	currentProgressStep.value = {
 		progress: 0,
-		label: '正在准备...',
+		label: t('interview.flow.preparing'),
 		stage: 'prepare'
 	}
 	progressSteps.value = []
@@ -255,12 +256,15 @@ const startResumeQuiz = async (requestId) => {
 	const params = {
 		resumeId: interviewStore.resumeId,
 		resumeContent: interviewStore.resumeText,
-		company: interviewStore.selectedPosition.company || '未指定公司',
+		company:
+			interviewStore.selectedPosition.company ||
+			t('interview.flow.unspecifiedCompany'),
 		positionName: interviewStore.selectedPosition.positionName || '',
 		minSalary: interviewStore.selectedPosition.minSalary || '',
 		maxSalary: interviewStore.selectedPosition.maxSalary || '',
 		jd: interviewStore.selectedPosition.jd || '',
-		requestId
+		requestId,
+		locale: locale.value
 	}
 
 	const config = useRuntimeConfig()
@@ -274,7 +278,7 @@ const startResumeQuiz = async (requestId) => {
 				if (data.type === 'progress') {
 					currentProgressStep.value = {
 						progress: data.progress || 0,
-						label: data.label || data.message || '处理中...',
+						label: data.label || data.message || t('interview.flow.processing'),
 						stage: data.stage || 'processing'
 					}
 					progressSteps.value.push(currentProgressStep.value)
@@ -303,8 +307,11 @@ const startResumeQuiz = async (requestId) => {
 					console.error('SSE Error:', data.error)
 					updateQuery({ step: 'error' })
 					toast.add({
-						title: '押题失败',
-						description: data.error.message || '网络错误，请稍后重试',
+						title: t('interview.flow.quizFailed'),
+						description:
+							data.error?.message ||
+							data.error ||
+							t('interview.flow.retryNetwork'),
 						color: 'error'
 					})
 				}
@@ -313,8 +320,8 @@ const startResumeQuiz = async (requestId) => {
 				console.error('SSE Error:', error)
 				updateQuery({ step: 'error' })
 				toast.add({
-					title: '押题失败',
-					description: error.message || '网络错误，请稍后重试',
+					title: t('interview.flow.quizFailed'),
+					description: error.message || t('interview.flow.retryNetwork'),
 					color: 'error'
 				})
 			}
@@ -342,8 +349,8 @@ const handleEndInterview = async (interviewResultId) => {
 	} catch (error) {
 		console.error('获取面试结果失败:', error)
 		toast.add({
-			title: '获取结果失败',
-			description: error.message || '请稍后重试',
+			title: t('interview.flow.resultFailed'),
+			description: error.message || t('profile.later'),
 			color: 'error'
 		})
 	}
@@ -355,8 +362,8 @@ const handleNextStep = async () => {
 
 	if (!finalResultId) {
 		toast.add({
-			title: '无法跳转',
-			description: '缺少结果 ID',
+			title: t('interview.flow.cannotNavigate'),
+			description: t('interview.flow.missingResult'),
 			color: 'error'
 		})
 		return
@@ -376,8 +383,8 @@ const handleNextStep = async () => {
 	else {
 		if (!resumeQuizComplete.value && !route.query.history) {
 			toast.add({
-				title: '面试评估报告正在努力生成中...预计还需 1 - 2 分钟',
-				description: '先看下押题的题目和报告吧～',
+				title: t('interview.flow.reportGenerating'),
+				description: t('interview.flow.viewQuestionsFirst'),
 				color: 'warning'
 			})
 			return
@@ -421,8 +428,8 @@ const initInterView = async () => {
 		} catch (error) {
 			console.error('加载历史记录失败:', error)
 			toast.add({
-				title: '加载失败',
-				description: error.message || '请稍后重试',
+				title: t('interview.flow.loadFailed'),
+				description: error.message || t('profile.later'),
 				color: 'error'
 			})
 		}

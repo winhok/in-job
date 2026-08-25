@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
+import { EntitlementService } from '../payment/entitlement.service';
 
 describe('UserController', () => {
   let controller: UserController;
@@ -12,6 +13,10 @@ describe('UserController', () => {
       providers: [
         {
           provide: UserService,
+          useValue: {},
+        },
+        {
+          provide: EntitlementService,
           useValue: {},
         },
       ],

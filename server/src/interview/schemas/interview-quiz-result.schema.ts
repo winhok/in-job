@@ -215,6 +215,9 @@ export class ResumeQuizResult {
   feedback?: string; // 用户反馈
 
   @Prop()
+  feedbackFair?: boolean; // 用户是否认为评估公平
+
+  @Prop()
   ratedAt?: Date; // 评分时间
 
   // ============ 状态管理 ============
@@ -246,6 +249,14 @@ export class ResumeQuizResult {
 
   @Prop()
   promptVersion?: string; // Prompt版本（用于A/B测试）
+
+  @Prop({
+    required: true,
+    type: String,
+    enum: ['zh-CN', 'en-US'],
+    default: 'zh-CN',
+  })
+  locale!: 'zh-CN' | 'en-US';
 }
 
 export const ResumeQuizResultSchema =

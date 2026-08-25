@@ -5,10 +5,10 @@
 				<h2
 					class="text-3xl md:text-4xl font-bold text-neutral-900 tracking-tight"
 				>
-					极简 3 步，完成全链路 AI 面试服务
+					{{ $t('home.steps.title') }}
 				</h2>
 				<p class="mt-4 text-lg text-neutral-600">
-					从押题到实战，从评估到提升，用最短路径构建完整面试能力。
+					{{ $t('home.steps.description') }}
 				</p>
 			</div>
 			<div class="relative mt-12">
@@ -27,10 +27,10 @@
 							1
 						</div>
 						<h3 class="text-xl font-semibold text-neutral-900 mb-3">
-							选择岗位与简历
+							{{ $t('home.steps.oneTitle') }}
 						</h3>
 						<p class="text-neutral-600 leading-relaxed">
-							设置目标岗位/公司，导入简历，选择所需服务类型（押题/模拟/行测）。
+							{{ $t('home.steps.oneDesc') }}
 						</p>
 					</div>
 					<div
@@ -42,10 +42,10 @@
 							2
 						</div>
 						<h3 class="text-xl font-semibold text-neutral-900 mb-3">
-							获取 AI 服务
+							{{ $t('home.steps.twoTitle') }}
 						</h3>
 						<p class="text-neutral-600 leading-relaxed">
-							快速押题预测、深度实战模拟、或综合能力评估，灵活选择适合的服务。
+							{{ $t('home.steps.twoDesc') }}
 						</p>
 					</div>
 					<div
@@ -57,10 +57,10 @@
 							3
 						</div>
 						<h3 class="text-xl font-semibold text-neutral-900 mb-3">
-							查看报告与提升
+							{{ $t('home.steps.threeTitle') }}
 						</h3>
 						<p class="text-neutral-600 leading-relaxed">
-							获得详细评估报告、雷达图分析与针对性提升建议，持续优化面试能力。
+							{{ $t('home.steps.threeDesc') }}
 						</p>
 					</div>
 				</div>
@@ -71,7 +71,7 @@
 					size="xl"
 					to="/interview/start"
 					class="px-8 shadow-lg shadow-primary-500/20 hover:shadow-primary-500/30 transition-all font-semibold"
-					>开启全链路 AI 服务</UButton
+					>{{ $t('home.steps.cta') }}</UButton
 				>
 			</div>
 		</div>

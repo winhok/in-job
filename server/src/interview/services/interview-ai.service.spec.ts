@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { RunnableLambda } from '@langchain/core/runnables';
 import { InterviewAIService } from './interview-ai.service';
 
@@ -36,6 +36,21 @@ describe('InterviewAIService mock interview copy', () => {
     expect(closing).toContain('小王');
     expect(closing).toContain('3-5个工作日');
     expect(closing).toContain('张老师');
+  });
+
+  it('英文场次生成完整英文开场和结束语', () => {
+    const opening = service.generateOpeningStatement(
+      'Alex',
+      'Taylor',
+      'Frontend Engineer',
+      'en-US',
+    );
+    const closing = service.generateClosingStatement('Alex', 'Taylor', 'en-US');
+    expect(opening).toContain('Hello Taylor');
+    expect(opening).toContain('Frontend Engineer role');
+    expect(closing).toContain('three to five business days');
+    expect(opening).not.toMatch(/[\u4e00-\u9fff]/);
+    expect(closing).not.toMatch(/[\u4e00-\u9fff]/);
   });
 });
 
@@ -104,5 +119,52 @@ describe('InterviewAIService assessment report', () => {
     await expect(
       createService(invalid).generateInterviewAssessmentReport(context),
     ).rejects.toThrow('AI返回的评估分数或综合评价格式不正确');
+  });
+
+  it('用户作用域存在时通过通用缓存执行评估', async () => {
+    const expected = {
+      overallScore: 80,
+      overallLevel: '良好',
+      overallComment: '表现稳定',
+      radarData: [],
+      strengths: [],
+      weaknesses: [],
+      improvements: [],
+      fluencyScore: 80,
+      logicScore: 80,
+      professionalScore: 80,
+    };
+    const model = RunnableLambda.from(() => JSON.stringify(expected));
+    const cache = {
+      getOrCompute: vi.fn(
+        (_options: unknown, compute: () => Promise<unknown>) => compute(),
+      ),
+    };
+    const service = new InterviewAIService(
+      { createDefaultModel: () => model } as never,
+      undefined,
+      {
+        get: vi.fn((key: string) =>
+          key === 'AI_PROVIDER' ? 'deepseek' : undefined,
+        ),
+      } as never,
+      cache as never,
+    );
+
+    await service.generateInterviewAssessmentReport({
+      ...context,
+      cacheScope: 'user-1',
+      locale: 'zh-CN',
+      promptVersion: 'v2',
+    });
+    expect(cache.getOrCompute).toHaveBeenCalledWith(
+      expect.objectContaining({
+        operation: 'assessment',
+        scopeKey: 'user-1',
+        locale: 'zh-CN',
+        promptVersion: 'v2',
+      }),
+      expect.any(Function),
+    );
   });
 });

@@ -30,6 +30,17 @@ describe('buildMockInterviewPrompt', () => {
     expect(prompt).toContain('接近目标时长45分钟');
     expect(prompt).toContain('[END_INTERVIEW]');
   });
+
+  it('英文场次明确要求所有面向用户内容使用英文', () => {
+    const prompt = buildMockInterviewPrompt({
+      interviewType: 'special',
+      elapsedMinutes: 5,
+      targetDuration: 60,
+      locale: 'en-US',
+    });
+    expect(prompt).toContain('natural professional English');
+    expect(prompt).toContain('Keep control markers exactly as specified');
+  });
 });
 
 describe('buildAssessmentPrompt', () => {
@@ -45,5 +56,16 @@ describe('buildAssessmentPrompt', () => {
     expect(prompt).toContain('综合面试评估维度');
     expect(prompt).toContain('职业素养');
     expect(prompt).not.toContain('项目经验**');
+  });
+
+  it('英文报告要求翻译文本值但保留结构化枚举', () => {
+    const prompt = buildAssessmentPrompt({
+      interviewType: 'comprehensive',
+      locale: 'en-US',
+    });
+    expect(prompt).toContain('professional English');
+    expect(prompt).toContain(
+      'Keep JSON keys and priority enum values unchanged',
+    );
   });
 });

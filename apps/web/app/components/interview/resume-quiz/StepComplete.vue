@@ -7,20 +7,26 @@
 			<div class="flex items-center gap-2 text-sm text-neutral-600">
 				<UIcon name="i-heroicons-check-circle" class="w-5 h-5 text-green-500" />
 				<span v-if="serviceType === 'resume'">
-					{{ $route.query.history ? '历史押题数据' : '押题完成' }}
-					，共生成 {{ predictionResults.length }} 道预测题</span
+					{{
+						$route.query.history
+							? $t('interview.complete.historyQuiz', {
+									count: predictionResults.length
+								})
+							: $t('interview.complete.quiz', {
+									count: predictionResults.length
+								})
+					}}</span
 				>
-				<span v-else-if="serviceType === 'special'"
-					>专项面试完成，共提问 {{ predictionResults.length }} 道题目</span
-				>
-				<span v-else-if="serviceType === 'behavior'"
-					>行测 + HR 面试完成，共提问
-					{{ predictionResults.length }} 道题目</span
-				>
+				<span v-else-if="serviceType === 'special'">{{
+					$t('interview.complete.special', { count: predictionResults.length })
+				}}</span>
+				<span v-else-if="serviceType === 'behavior'">{{
+					$t('interview.complete.behavior', { count: predictionResults.length })
+				}}</span>
 				<span
 					class="text-xs text-success-500 cursor-pointer underline hover:text-success-600 transition-colors"
 					@click="$emit('navigate-history')"
-					>后续可在「历史记录」中查看</span
+					>{{ $t('interview.complete.historyHint') }}</span
 				>
 			</div>
 			<div class="flex items-center gap-3 w-full sm:w-auto">
@@ -31,7 +37,7 @@
 					class="flex-1 sm:flex-none"
 					@click="handleRetry"
 				>
-					重新开始
+					{{ $t('interview.complete.restart') }}
 				</UButton>
 				<UButton
 					color="primary"
@@ -39,7 +45,7 @@
 					class="flex-1 sm:flex-none"
 					@click="$emit('next-step')"
 				>
-					下一步：查看提升计划
+					{{ $t('interview.complete.next') }}
 					<UIcon name="i-heroicons-arrow-right" class="w-4 h-4 ml-1" />
 				</UButton>
 			</div>
@@ -65,11 +71,14 @@
 						</div>
 					</div>
 					<div class="space-y-2">
-						<h3 class="font-bold text-neutral-900">AI 押题分析总结</h3>
+						<h3 class="font-bold text-neutral-900">
+							{{ $t('interview.complete.summary') }}
+						</h3>
 						<p
 							class="text-sm text-neutral-600 leading-relaxed whitespace-pre-wrap"
-							v-html="marked.parse(predictionSummary)"
-						></p>
+						>
+							{{ predictionSummary }}
+						</p>
 					</div>
 				</div>
 			</div>
@@ -99,7 +108,11 @@
 										size="sm"
 										class="capitalize"
 									>
-										考察类型：{{ getCategoryName(item.category) }}
+										{{
+											$t('interview.complete.category', {
+												name: getCategoryName(item.category)
+											})
+										}}
 									</UBadge>
 									<UBadge
 										v-if="item.difficulty"
@@ -108,7 +121,11 @@
 										size="sm"
 										class="capitalize"
 									>
-										题目难度：{{ getDifficultyConfig(item.difficulty).label }}
+										{{
+											$t('interview.complete.difficulty', {
+												name: getDifficultyConfig(item.difficulty).label
+											})
+										}}
 									</UBadge>
 									<UBadge
 										v-for="(keyword, kIndex) in item.keywords"
@@ -133,7 +150,11 @@
 										"
 										size="xs"
 										@click="item.isOpen = !item.isOpen"
-										>{{ item.isOpen ? '折叠' : '展开' }}</UButton
+										>{{
+											item.isOpen
+												? $t('interview.complete.collapse')
+												: $t('interview.complete.expand')
+										}}</UButton
 									>
 								</div>
 							</div>
@@ -154,7 +175,9 @@
 							>
 								<UIcon name="i-heroicons-eye" class="w-4 h-4 shrink-0 mt-0.5" />
 								<span
-									><span class="font-medium">考察意图：</span
+									><span class="font-medium">{{
+										$t('interview.complete.reasoning')
+									}}</span
 									>{{ item.reasoning }}</span
 								>
 							</div>
@@ -169,10 +192,10 @@
 								class="flex items-center gap-2 text-sm font-semibold text-amber-600"
 							>
 								<UIcon name="i-heroicons-light-bulb" class="w-4 h-4" />
-								<span>回答要点</span>
+								<span>{{ $t('interview.complete.tips') }}</span>
 							</div>
 							<div
-								class="pl-6 text-sm text-neutral-600 leading-relaxed whitespace-pre-wrap bg-amber-50/50 p-3 rounded-xl border border-amber-100/50"
+								class="pl-6 text-sm text-amber-950 leading-relaxed whitespace-pre-wrap bg-amber-50/50 p-3 rounded-xl border border-amber-100/50"
 							>
 								{{ item.tips }}
 							</div>
@@ -187,12 +210,13 @@
 									name="i-heroicons-chat-bubble-bottom-center-text"
 									class="w-4 h-4"
 								/>
-								<span>参考回答思路</span>
+								<span>{{ $t('interview.complete.reference') }}</span>
 							</div>
 							<div
 								class="pl-6 text-sm text-neutral-700 leading-relaxed whitespace-pre-wrap"
-								v-html="marked.parse(item.answer)"
-							></div>
+							>
+								{{ item.answer }}
+							</div>
 						</div>
 					</div>
 				</div>
@@ -204,7 +228,6 @@
 <script setup>
 import { useInterviewStore } from '@/stores/interview'
 import { navigateTo } from '#imports'
-import { marked } from 'marked'
 
 defineProps({
 	// resume: 面试押题
@@ -225,24 +248,34 @@ defineProps({
 })
 
 defineEmits(['retry', 'next-step', 'navigate-history'])
+const { t } = useI18n()
 
 // 辅助函数
 const getCategoryName = (category) => {
 	const categoryMap = {
-		technical: '技术',
-		project: '项目经验',
-		'soft-skill': '软技能',
-		'problem-solving': '问题解决',
-		'self-introduction': '自我介绍'
+		technical: t('interview.complete.categories.technical'),
+		project: t('interview.complete.categories.project'),
+		'soft-skill': t('interview.complete.categories.soft'),
+		'problem-solving': t('interview.complete.categories.problem'),
+		'self-introduction': t('interview.complete.categories.intro')
 	}
 	return categoryMap[category] || category
 }
 
 const getDifficultyConfig = (difficulty) => {
 	const difficultyMap = {
-		easy: { label: '简单', color: 'green' },
-		medium: { label: '中等', color: 'amber' },
-		hard: { label: '困难', color: 'red' }
+		easy: {
+			label: t('interview.complete.difficultyLabels.easy'),
+			color: 'green'
+		},
+		medium: {
+			label: t('interview.complete.difficultyLabels.medium'),
+			color: 'amber'
+		},
+		hard: {
+			label: t('interview.complete.difficultyLabels.hard'),
+			color: 'red'
+		}
 	}
 	return difficultyMap[difficulty] || { label: difficulty, color: 'gray' }
 }
@@ -252,16 +285,16 @@ const globalModal = useGlobalModal()
 
 const handleRetry = () => {
 	globalModal.showModal({
-		title: '趁热打铁，再来一次？',
+		title: t('interview.complete.retryTitle'),
 		buttons: [
 			{
-				label: '点错了',
+				label: t('interview.complete.cancelRetry'),
 				color: 'gray',
 				variant: 'ghost',
 				onClick: () => console.log('cancel')
 			},
 			{
-				label: '那必须的',
+				label: t('interview.complete.confirmRetry'),
 				color: 'primary',
 				onClick: () => {
 					// 清空选择的所有内容

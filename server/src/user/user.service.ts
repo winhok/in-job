@@ -19,6 +19,10 @@ import {
   UserConsumptionDocument,
 } from './schemas/consumption-record.schema';
 import { UpdateUserDto } from './dto/update-user.dto';
+import {
+  UserTransaction,
+  UserTransactionDocument,
+} from '../payment/schemas/user-transaction.schema';
 
 @Injectable()
 export class UserService {
@@ -28,6 +32,8 @@ export class UserService {
     private consumptionRecordModel: Model<ConsumptionRecordDocument>,
     @InjectModel(UserConsumption.name)
     private consumptionModel: Model<UserConsumptionDocument>,
+    @InjectModel(UserTransaction.name)
+    private transactionModel: Model<UserTransactionDocument>,
     private jwtService: JwtService,
   ) {}
 
@@ -107,6 +113,14 @@ export class UserService {
   }
 
   async updateUser(userId: string, updateUserDto: UpdateUserDto) {
+    const username = updateUserDto.username ?? updateUserDto.nickname;
+    if (username) {
+      const existingUser = await this.userModel.findOne({
+        username,
+        _id: { $ne: userId },
+      });
+      if (existingUser) throw new BadRequestException('用户名已被使用');
+    }
     // 如果更新邮箱，检查邮箱是否已被使用
     if (updateUserDto.email) {
       const existingUser = await this.userModel.findOne({
@@ -119,9 +133,13 @@ export class UserService {
       }
     }
 
-    const user = await this.userModel.findByIdAndUpdate(userId, updateUserDto, {
-      new: true,
-    });
+    const safeUpdate = { ...updateUserDto };
+    delete safeUpdate.nickname;
+    const user = await this.userModel.findByIdAndUpdate(
+      userId,
+      { ...safeUpdate, ...(username ? { username } : {}) },
+      { new: true },
+    );
 
     if (!user) {
       throw new NotFoundException('用户不存在');
@@ -198,5 +216,30 @@ export class UserService {
       records, // 用户的消费记录
       stats, // 按消费类型分组后的统计信息
     };
+  }
+
+  async getUserTransactions(
+    userId: string,
+    rawPage?: number,
+    rawLimit?: number,
+  ) {
+    const page =
+      Number.isInteger(rawPage) && Number(rawPage) > 0 ? Number(rawPage) : 1;
+    const limit =
+      Number.isInteger(rawLimit) && Number(rawLimit) > 0
+        ? Math.min(Number(rawLimit), 100)
+        : 20;
+    const filter = { userIdentifier: userId };
+    const [records, total] = await Promise.all([
+      this.transactionModel
+        .find(filter)
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .select('-user -userIdentifier -__v')
+        .lean(),
+      this.transactionModel.countDocuments(filter),
+    ]);
+    return { records, total, page, limit };
   }
 }

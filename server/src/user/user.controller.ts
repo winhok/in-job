@@ -17,6 +17,9 @@ import { Public } from '../auth/public.decorator';
 import { ApiOperation } from '@nestjs/swagger';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Request as ExpressRequest } from 'express';
+import { EntitlementService } from '../payment/entitlement.service';
+import { ClaimShareRewardDto } from '../payment/dto/payment.dto';
+import { RateLimit } from '../common/rate-limit/rate-limit.decorator';
 
 interface AuthenticatedRequest extends ExpressRequest {
   user: {
@@ -27,7 +30,10 @@ interface AuthenticatedRequest extends ExpressRequest {
 @Controller('user')
 @UseGuards(JwtAuthGuard) // 使用认证守卫
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private readonly entitlementService: EntitlementService,
+  ) {}
 
   @Post('register')
   @Public()
@@ -81,5 +87,30 @@ export class UserController {
       limit,
     });
     return ResponseUtil.success(result, '获取成功');
+  }
+
+  @Get('transactions')
+  async getTransactions(
+    @Request() req: AuthenticatedRequest,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    return ResponseUtil.success(
+      await this.userService.getUserTransactions(req.user.userId, page, limit),
+      '获取成功',
+    );
+  }
+
+  @Post('share-reward')
+  @RateLimit(3, 60_000)
+  async claimShareReward(
+    @Request() req: AuthenticatedRequest,
+    @Body() dto: ClaimShareRewardDto,
+  ) {
+    void dto.source;
+    return ResponseUtil.success(
+      await this.entitlementService.claimShareReward(req.user.userId),
+      '分享奖励领取成功',
+    );
   }
 }

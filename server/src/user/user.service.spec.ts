@@ -6,6 +6,7 @@ import { JwtService } from '@nestjs/jwt';
 import { User } from './schemas/user.schema';
 import { ConsumptionRecord } from '../interview/schemas/consumption-record.schema';
 import { UserConsumption } from './schemas/consumption-record.schema';
+import { UserTransaction } from '../payment/schemas/user-transaction.schema';
 
 describe('UserService', () => {
   let service: UserService;
@@ -24,6 +25,10 @@ describe('UserService', () => {
         },
         {
           provide: getModelToken(UserConsumption.name),
+          useValue: {},
+        },
+        {
+          provide: getModelToken(UserTransaction.name),
           useValue: {},
         },
         {

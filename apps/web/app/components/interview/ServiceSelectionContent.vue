@@ -1,7 +1,7 @@
 <template>
 	<div class="space-y-4">
 		<p class="text-xs text-neutral-500">
-			请选择本次练习的服务类型，每项都会引导至对应的体验流程。
+			{{ $t('interview.start.selectNextDesc') }}
 		</p>
 		<div class="grid gap-3">
 			<button
@@ -55,7 +55,7 @@
 						<div
 							class="mt-4 inline-flex items-center gap-1 text-xs font-medium text-primary-600"
 						>
-							{{ option.cta || '进入服务流程' }}
+							{{ option.cta || $t('interview.start.enterService') }}
 							<UIcon name="i-heroicons-arrow-right" class="w-3.5 h-3.5" />
 						</div>
 					</div>

@@ -54,18 +54,6 @@ export const useUserStore = defineStore('user', {
 		updateUserInfo(userInfo) {
 			this.userInfo = { ...this.userInfo, ...userInfo }
 		},
-		// 更新旺旺币余额
-		updateWalletBalance(balance) {
-			this.wallet.balance = balance
-		},
-		// 添加充值记录
-		addRechargeRecord(record) {
-			this.wallet.rechargeRecords.unshift(record)
-		},
-		// 添加消费记录
-		addConsumptionRecord(record) {
-			this.wallet.consumptionRecords.unshift(record)
-		},
 		// 添加简历
 		addResume(resume) {
 			if (this.resumes.length < 5) {

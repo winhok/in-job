@@ -22,8 +22,8 @@
 			<div class="text-9xl font-bold mb-12 animate-pulse text-primary-400">
 				{{ countdown }}
 			</div>
-			<div class="text-3xl font-medium tracking-wider animate-bounce">
-				面试中请保持网络稳定，如遇网络波动导致面试中断，可刷新页面继续进行面试
+			<div class="text-3xl font-medium tracking-wider animate-pulse">
+				{{ $t('interview.tips.network') }}
 			</div>
 		</div>
 	</div>

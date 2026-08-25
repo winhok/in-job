@@ -32,9 +32,11 @@
 						</div>
 						<div>
 							<h1 class="font-bold text-slate-900 text-lg leading-tight mb-1">
-								面试汪：全链路 AI 服务
+								{{ $t('interview.sidebar.title') }}
 							</h1>
-							<p class="text-xs text-slate-500">押题·模拟·行测 三位一体</p>
+							<p class="text-xs text-slate-500">
+								{{ $t('interview.sidebar.subtitle') }}
+							</p>
 						</div>
 					</div>
 
@@ -42,7 +44,7 @@
 						<h2
 							class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4"
 						>
-							极简三步，快速开始
+							{{ $t('interview.sidebar.stepsLabel') }}
 						</h2>
 					</div>
 				</div>
@@ -81,8 +83,8 @@
 									step.id === interviewStore.currentStep
 										? 'border-primary-600 text-primary-600 shadow-md scale-110'
 										: isAllowClick(step)
-										? 'border-primary-200 bg-primary-50 text-primary-600'
-										: 'border-slate-200 text-slate-300'
+											? 'border-primary-200 bg-primary-50 text-primary-600'
+											: 'border-slate-200 text-slate-300'
 								]"
 							>
 								<UIcon
@@ -106,8 +108,8 @@
 										step.id === interviewStore.currentStep
 											? 'text-slate-900'
 											: isAllowClick(step)
-											? 'text-slate-700'
-											: 'text-slate-400'
+												? 'text-slate-700'
+												: 'text-slate-400'
 									]"
 								>
 									{{ step.title }}
@@ -148,18 +150,18 @@
 								>
 							</div>
 							<p class="text-sm font-medium leading-relaxed text-white/90">
-								通过 AI 面试预演，提前暴露问题并快速迭代。
+								{{ $t('interview.sidebar.tip') }}
 							</p>
 							<div class="mt-3 flex flex-wrap gap-2">
 								<span
 									class="inline-flex items-center px-2 py-1 rounded bg-white/10 text-[10px] text-white/80 border border-white/10"
 								>
-									<StarMethodModal /> 法则
+									{{ $t('interview.sidebar.star') }}
 								</span>
 								<span
 									class="inline-flex items-center px-2 py-1 rounded bg-white/10 text-[10px] text-white/80 border border-white/10"
 								>
-									结构化回答
+									{{ $t('interview.sidebar.structured') }}
 								</span>
 							</div>
 						</div>
@@ -179,7 +181,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { computed } from 'vue'
 import { useInterviewStore } from '@/stores/interview'
 import { navigateTo, useRoute } from '#imports'
 import { SERVICE_TAGS } from '@/constants/vip'
@@ -190,24 +192,25 @@ const globalModal = useGlobalModal()
 const interviewStore = useInterviewStore()
 const route = useRoute()
 const toast = useToast()
+const { t } = useI18n()
 
-const steps = [
+const steps = computed(() => [
 	{
 		id: 1,
-		title: '选择岗位与简历',
-		summary: '定位目标岗位，导入简历'
+		title: t('interview.sidebar.step1'),
+		summary: t('interview.sidebar.step1Desc')
 	},
 	{
 		id: 2,
-		title: '开启专项服务形态',
-		summary: '根据不同服务形态，模拟真实场景'
+		title: t('interview.sidebar.step2'),
+		summary: t('interview.sidebar.step2Desc')
 	},
 	{
 		id: 3,
-		title: '查看分析报告',
-		summary: '多维度评估与提升计划'
+		title: t('interview.sidebar.step3'),
+		summary: t('interview.sidebar.step3Desc')
 	}
-]
+])
 
 const toggleSidebar = () => {
 	interviewStore.isSidebarOpen = !interviewStore.isSidebarOpen
@@ -264,8 +267,8 @@ const handleStepClick = (stepId) => {
 	// 当前处于押题进度条环节，不允许点击步骤
 	if (isProgressing.value) {
 		toast.add({
-			title: '不要呀～～',
-			description: '这时跳转会导致白白浪费一次押题机会哦～～',
+			title: t('interview.navigationBlockedTitle'),
+			description: t('interview.quizNavigationBlocked'),
 			color: 'warning',
 			icon: 'i-heroicons-lock-closed'
 		})
@@ -275,8 +278,8 @@ const handleStepClick = (stepId) => {
 	// 如果是在面试中，那么需要给用户提示，先结束面试
 	if (isInterviewing.value) {
 		toast.add({
-			title: '请先结束面试，再进行跳转',
-			description: '注意：中途结束面试，会导致消费一次面试机会哦～～',
+			title: t('interview.finishBeforeLeaving'),
+			description: t('interview.finishBeforeLeavingDesc'),
 			color: 'warning',
 			icon: 'i-heroicons-lock-closed'
 		})
@@ -286,8 +289,8 @@ const handleStepClick = (stepId) => {
 	// 禁止点击未解锁的步骤
 	if (stepId > interviewStore.currentStep) {
 		toast.add({
-			title: '不要着急嘛',
-			description: '先把当前的步骤做完呗～',
+			title: t('interview.sidebar.locked'),
+			description: t('interview.sidebar.lockedDesc'),
 			color: 'warning',
 			icon: 'i-heroicons-lock-closed'
 		})
@@ -320,8 +323,8 @@ const handleStepClick = (stepId) => {
 
 		if (!targetPath) {
 			toast.add({
-				title: '未选择服务',
-				description: '请先在第一步选择服务类型',
+				title: t('interview.sidebar.noService'),
+				description: t('interview.sidebar.noServiceDesc'),
 				color: 'warning'
 			})
 			navigateTo('/interview/start')
@@ -340,8 +343,8 @@ const handleStepClick = (stepId) => {
 		// 检查报告是否已生成
 		if (!interviewStore.report || !interviewStore.reportGenerated) {
 			toast.add({
-				title: '报告未生成',
-				description: '请先完成面试以生成报告',
+				title: t('interview.sidebar.noReport'),
+				description: t('interview.sidebar.noReportDesc'),
 				color: 'warning',
 				icon: 'i-heroicons-document-text'
 			})

@@ -1,7 +1,7 @@
 <template>
 	<UModal
 		v-model:open="isOpen"
-		title="编辑个人信息"
+		:title="$t('profile.editor.title')"
 		:ui="{ width: 'sm:max-w-md' }"
 	>
 		<template #body>
@@ -12,7 +12,7 @@
 						<div class="relative">
 							<UAvatar
 								:src="formData.avatar"
-								:alt="formData.username || '用户头像'"
+								:alt="formData.username || $t('account.avatarAlt')"
 								size="3xl"
 								class="cursor-pointer ring-4 ring-primary-100 transition-all hover:ring-primary-200"
 							/>
@@ -32,7 +32,9 @@
 								@click="triggerAvatarUpload"
 							>
 								<UIcon name="i-heroicons-camera" class="w-5 h-5 mb-1" />
-								<span class="text-[10px]">更换</span>
+								<span class="text-[10px]">{{
+									$t('profile.editor.change')
+								}}</span>
 							</div>
 						</div>
 						<!-- 状态指示器 -->
@@ -40,7 +42,7 @@
 							v-if="avatarUploading"
 							class="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-primary-500 text-white text-[10px] px-2 py-0.5 rounded-full whitespace-nowrap"
 						>
-							上传中...
+							{{ $t('profile.editor.uploading') }}
 						</div>
 					</div>
 					<UButton
@@ -53,10 +55,10 @@
 						@click="triggerAvatarUpload"
 					>
 						<UIcon name="i-heroicons-photo" class="w-4 h-4" />
-						更换头像
+						{{ $t('profile.editor.changeAvatar') }}
 					</UButton>
 					<p class="text-xs text-gray-500 mt-2 text-center">
-						支持 JPG、PNG 格式，文件大小不超过 500kb
+						{{ $t('profile.editor.avatarHint') }}
 					</p>
 					<input
 						ref="avatarInputRef"
@@ -73,7 +75,7 @@
 						class="w-full"
 						icon="i-lucide-user"
 						v-model="formData.username"
-						placeholder="请输入用户名（2-20个字符）"
+						:placeholder="$t('profile.editor.username')"
 						size="lg"
 					>
 					</UInput>
@@ -84,7 +86,7 @@
 						class="w-full"
 						icon="i-lucide-at-sign"
 						v-model="formData.email"
-						placeholder="请输入您的邮箱地址"
+						:placeholder="$t('profile.editor.email')"
 						size="lg"
 					>
 					</UInput>
@@ -101,7 +103,7 @@
 					:disabled="loading"
 					@click="handleCancel"
 				>
-					取消
+					{{ $t('common.cancel') }}
 				</UButton>
 				<UButton
 					color="primary"
@@ -109,7 +111,7 @@
 					:loading="loading"
 					@click="handleSubmit"
 				>
-					保存更改
+					{{ $t('profile.editor.save') }}
 				</UButton>
 			</div>
 		</template>
@@ -143,6 +145,7 @@ const userStore = useUserStore()
 const { $api } = useNuxtApp()
 
 const toast = useToast()
+const { t } = useI18n()
 const loading = ref(false)
 const avatarUploading = ref(false)
 const avatarInputRef = ref(null)
@@ -206,7 +209,7 @@ const handleAvatarChange = async (event) => {
 	// 验证文件类型
 	if (!file.type.startsWith('image/')) {
 		toast.add({
-			title: '请选择图片文件',
+			title: t('profile.editor.imageOnly'),
 			color: 'error'
 		})
 		return
@@ -215,7 +218,7 @@ const handleAvatarChange = async (event) => {
 	// 验证文件大小（限制 500 kb）
 	if (file.size > 500 * 1024) {
 		toast.add({
-			title: '图片大小不能超过 500KB',
+			title: t('profile.editor.imageSize'),
 			color: 'error'
 		})
 		return
@@ -232,7 +235,7 @@ const handleAvatarChange = async (event) => {
 		reader.readAsDataURL(file)
 	} catch (error) {
 		toast.add({
-			title: '上传失败',
+			title: t('profile.editor.uploadFailed'),
 			description: error.message,
 			color: 'error'
 		})
@@ -259,7 +262,7 @@ const handleAvatarChange = async (event) => {
 		} catch (e) {
 			event.target.value = ''
 			toast.add({
-				title: '头像上传失败',
+				title: t('profile.editor.uploadFailed'),
 				description: e.message,
 				color: 'error'
 			})
@@ -271,13 +274,13 @@ const handleAvatarChange = async (event) => {
 const validate = () => {
 	// 简单验证下，用户名在 2 ~ 20 个字符之间
 	if (!formData.value.username.trim()) {
-		errors.value.username = '请输入用户名'
+		errors.value.username = t('profile.editor.usernameRequired')
 		return false
 	} else if (formData.value.username.trim().length < 2) {
-		errors.value.username = '用户名至少需要2个字符'
+		errors.value.username = t('profile.editor.usernameShort')
 		return false
 	} else if (formData.value.username.trim().length > 20) {
-		errors.value.username = '用户名不能超过20个字符'
+		errors.value.username = t('profile.editor.usernameLong')
 		return false
 	}
 	// 验证邮箱
@@ -285,7 +288,7 @@ const validate = () => {
 		formData.value.email &&
 		!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.value.email)
 	) {
-		errors.value.email = '请输入有效的邮箱地址'
+		errors.value.email = t('profile.editor.emailInvalid')
 		return false
 	}
 
@@ -311,7 +314,7 @@ const handleSubmit = async () => {
 
 		// 提示用户修改成功，关闭 dialog，修改 userSotre 中的数据
 		toast.add({
-			title: '个人信息修改成功',
+			title: t('profile.editor.success'),
 			color: 'success'
 		})
 		isOpen.value = false
@@ -322,7 +325,7 @@ const handleSubmit = async () => {
 		}
 	} catch (error) {
 		toast.add({
-			title: '保存失败',
+			title: t('profile.editor.saveFailed'),
 			description: error.message,
 			color: 'error'
 		})

@@ -1,5 +1,5 @@
-import { Module } from '@nestjs/common';
-import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { JwtModule } from '@nestjs/jwt';
@@ -15,12 +15,24 @@ import { ResponseInterceptor } from './common/interceptors/response.interceptor'
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { JwtStrategy } from './auth/jwt.strategy';
 import { getTokenExpirationSeconds } from './common/utils/jwt.util';
+import { AdminModule } from './admin/admin.module';
+import { ResumeModule } from './resume/resume.module';
+import { ObservabilityModule } from './common/observability/observability.module';
+import { MetricsInterceptor } from './common/interceptors/metrics.interceptor';
+import { TraceIdMiddleware } from './common/middleware/trace-id.middleware';
+import { validateEnvironment } from './config/env.validation';
+import { ReviewModule } from './review/review.module';
+import { AiCacheModule } from './ai-cache/ai-cache.module';
+import { RateLimitGuard } from './common/rate-limit/rate-limit.guard';
+import { PrecomputeModule } from './precompute/precompute.module';
+import { AlertsModule } from './alerts/alerts.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
-      envFilePath: '.env.development',
+      envFilePath: [`.env.${process.env.NODE_ENV || 'development'}`, '.env'],
       isGlobal: true,
+      validate: validateEnvironment,
     }),
     MongooseModule.forRoot(
       process.env.MONGODB_URI || 'mongodb://localhost:27017/wwzhidao',
@@ -45,6 +57,13 @@ import { getTokenExpirationSeconds } from './common/utils/jwt.util';
     PaymentModule,
     StsModule,
     InterviewModule,
+    AdminModule,
+    ResumeModule,
+    ObservabilityModule,
+    ReviewModule,
+    AiCacheModule,
+    PrecomputeModule,
+    AlertsModule,
   ],
   controllers: [AppController],
   providers: [
@@ -55,9 +74,21 @@ import { getTokenExpirationSeconds } from './common/utils/jwt.util';
       useClass: ResponseInterceptor,
     },
     {
+      provide: APP_INTERCEPTOR,
+      useClass: MetricsInterceptor,
+    },
+    {
       provide: APP_FILTER,
       useClass: AllExceptionsFilter,
     },
+    {
+      provide: APP_GUARD,
+      useClass: RateLimitGuard,
+    },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer): void {
+    consumer.apply(TraceIdMiddleware).forRoutes('*');
+  }
+}

@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import { JsonOutputParser } from '@langchain/core/output_parsers';
 import { PromptTemplate } from '@langchain/core/prompts';
 import { AIModelFactory } from '../../ai/services/ai-model.factory';
@@ -18,6 +18,11 @@ import {
   QuestionCategory,
   QuestionDifficulty,
 } from '../schemas/interview-quiz-result.schema';
+import { MetricsService } from '../../common/metrics/metrics.service';
+import { LogAiCall } from '../../common/decorators/log-ai-call.decorator';
+import { ConfigService } from '@nestjs/config';
+import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
+import { AiCacheService } from '../../ai-cache/ai-cache.service';
 
 interface ResumeQuizPromptParams {
   company: string;
@@ -35,6 +40,8 @@ export interface ResumeQuizInput {
   jd: string;
   resumeContent: string;
   promptVersion?: string;
+  cacheScope?: string;
+  locale?: 'zh-CN' | 'en-US';
 }
 
 export interface ResumeQuizQuestion {
@@ -89,6 +96,8 @@ export interface MockInterviewQuestionContext {
   }>;
   elapsedMinutes: number;
   targetDuration: number;
+  retrievedContext?: string[];
+  locale?: 'zh-CN' | 'en-US';
 }
 
 export interface MockInterviewQuestionResult {
@@ -114,6 +123,9 @@ export interface InterviewAssessmentContext {
     avgAnswerLength: number;
     emptyAnswersCount: number;
   };
+  cacheScope?: string;
+  locale?: 'zh-CN' | 'en-US';
+  promptVersion?: string;
 }
 
 export interface InterviewAssessmentResult {
@@ -145,13 +157,26 @@ export interface InterviewAssessmentResult {
 export class InterviewAIService {
   private readonly logger = new Logger(InterviewAIService.name);
 
-  constructor(private readonly aiModelFactory: AIModelFactory) {}
+  constructor(
+    private readonly aiModelFactory: AIModelFactory,
+    @Optional() private readonly metrics?: MetricsService,
+    @Optional() private readonly configService?: ConfigService,
+    @Optional() private readonly cache?: AiCacheService,
+  ) {}
 
   generateOpeningStatement(
     interviewerName: string,
     candidateName?: string,
     positionName?: string,
+    locale: 'zh-CN' | 'en-US' = 'zh-CN',
   ): string {
+    if (locale === 'en-US') {
+      const candidate = candidateName?.trim() || 'there';
+      const role = positionName?.trim()
+        ? ` I see that you are applying for the ${positionName.trim()} role.`
+        : '';
+      return `Hello ${candidate}, I’m your interviewer today. You can call me ${interviewerName}.${role}\n\nLet’s begin. First, please introduce yourself, including your education, professional background, and the results you are most proud of.`;
+    }
     let greeting = `${candidateName?.trim() || '你'}好，我是你今天的面试官，你可以叫我${interviewerName}老师。\n\n`;
     if (positionName?.trim()) {
       greeting += `我看到你申请的是${positionName.trim()}岗位。\n\n`;
@@ -165,11 +190,13 @@ export class InterviewAIService {
     interviewerName: string,
     candidateName?: string,
     positionName?: string,
+    locale: 'zh-CN' | 'en-US' = 'zh-CN',
   ): AsyncGenerator<string, string, undefined> {
     const fullGreeting = this.generateOpeningStatement(
       interviewerName,
       candidateName,
       positionName,
+      locale,
     );
     const chunkSize = 5;
     for (let index = 0; index < fullGreeting.length; index += chunkSize) {
@@ -193,18 +220,25 @@ export class InterviewAIService {
       const stream = await chain.stream({
         interviewType: context.interviewType,
         resumeContent: context.resumeContent,
-        company: context.company || '未提供',
-        positionName: context.positionName || '未提供',
-        jd: context.jd || '未提供',
+        company: context.company || this.notProvided(context.locale),
+        positionName: context.positionName || this.notProvided(context.locale),
+        jd: context.jd || this.notProvided(context.locale),
         conversationHistory: this.formatConversationHistory(
           context.conversationHistory,
+          context.locale,
         ),
         elapsedMinutes: context.elapsedMinutes,
         targetDuration: context.targetDuration,
+        retrievedContext:
+          context.retrievedContext?.join('\n\n') ||
+          (context.locale === 'en-US'
+            ? '(No supplemental context is available.)'
+            : '（没有可用的补充资料）'),
       });
 
       let fullContent = '';
       for await (const chunk of stream) {
+        this.captureAiUsage(chunk);
         const content = this.extractChunkText(chunk.content);
         if (!content) continue;
         fullContent += content;
@@ -214,8 +248,10 @@ export class InterviewAIService {
       this.logger.log(
         `✅ 模拟面试问题流式生成完成: 耗时=${Date.now() - startedAt}ms, 长度=${fullContent.length}`,
       );
+      this.observeAi('mock_question', 'success', startedAt);
       return this.parseInterviewResponse(fullContent, context);
     } catch (error) {
+      this.observeAi('mock_question', 'error', startedAt);
       this.logger.error(
         `❌ 模拟面试问题生成失败: ${this.getErrorMessage(error)}`,
       );
@@ -226,7 +262,12 @@ export class InterviewAIService {
   generateClosingStatement(
     interviewerName: string,
     candidateName?: string,
+    locale: 'zh-CN' | 'en-US' = 'zh-CN',
   ): string {
+    if (locale === 'en-US') {
+      const name = candidateName?.trim() || 'Candidate';
+      return `Thank you, ${name}. That concludes today’s interview.\n\nWe appreciate your time and thoughtful answers. We’ll share our assessment with the hiring team, and you can expect an update within three to five business days.\n\nIf you have any questions, please contact HR. Best of luck!\n\n— ${interviewerName}`;
+    }
     const name = candidateName?.trim() || '候选人';
     return (
       `好的${name}，今天的面试就到这里。\n\n` +
@@ -237,6 +278,7 @@ export class InterviewAIService {
     );
   }
 
+  @LogAiCall('resume_questions')
   async generateResumeQuizQuestionsOnly(
     input: ResumeQuizInput,
   ): Promise<ResumeQuizQuestionsResult> {
@@ -244,23 +286,33 @@ export class InterviewAIService {
 
     try {
       const prompt = PromptTemplate.fromTemplate(
-        RESUME_QUIZ_PROMPT_QUESTIONS_ONLY,
+        this.withOutputLanguage(
+          RESUME_QUIZ_PROMPT_QUESTIONS_ONLY,
+          input.locale,
+        ),
       );
-      const parser = new JsonOutputParser<Record<string, unknown>>();
-      const chain = prompt
-        .pipe(this.aiModelFactory.createCreativeModel())
-        .pipe(parser);
-      const result = await chain.invoke({
-        ...this.buildPromptParams(input),
-        format_instructions: FORMAT_INSTRUCTIONS_QUESTIONS_ONLY,
-      });
+      const compute = () =>
+        this.invokeJson(prompt, this.aiModelFactory.createCreativeModel(), {
+          ...this.buildPromptParams(input),
+          format_instructions: FORMAT_INSTRUCTIONS_QUESTIONS_ONLY,
+        });
+      const result = await this.cachedJson(
+        'resume_questions',
+        input.cacheScope,
+        input.locale,
+        input.promptVersion,
+        input,
+        compute,
+      );
 
       this.assertQuestionsResult(result);
       this.logger.log(
         `✅ [押题部分] 生成成功: 耗时=${Date.now() - startedAt}ms, 问题数=${result.questions.length}`,
       );
+      this.observeAi('resume_questions', 'success', startedAt);
       return result;
     } catch (error) {
+      this.observeAi('resume_questions', 'error', startedAt);
       this.logger.error(
         `❌ [押题部分] 生成失败: 耗时=${Date.now() - startedAt}ms, 错误=${this.getErrorMessage(error)}`,
       );
@@ -268,6 +320,7 @@ export class InterviewAIService {
     }
   }
 
+  @LogAiCall('resume_analysis')
   async generateResumeQuizAnalysisOnly(
     input: ResumeQuizInput,
   ): Promise<ResumeQuizAnalysisResult> {
@@ -275,23 +328,30 @@ export class InterviewAIService {
 
     try {
       const prompt = PromptTemplate.fromTemplate(
-        RESUME_QUIZ_PROMPT_ANALYSIS_ONLY,
+        this.withOutputLanguage(RESUME_QUIZ_PROMPT_ANALYSIS_ONLY, input.locale),
       );
-      const parser = new JsonOutputParser<Record<string, unknown>>();
-      const chain = prompt
-        .pipe(this.aiModelFactory.createStableModel())
-        .pipe(parser);
-      const result = await chain.invoke({
-        ...this.buildPromptParams(input),
-        format_instructions: FORMAT_INSTRUCTIONS_ANALYSIS_ONLY,
-      });
+      const compute = () =>
+        this.invokeJson(prompt, this.aiModelFactory.createStableModel(), {
+          ...this.buildPromptParams(input),
+          format_instructions: FORMAT_INSTRUCTIONS_ANALYSIS_ONLY,
+        });
+      const result = await this.cachedJson(
+        'resume_analysis',
+        input.cacheScope,
+        input.locale,
+        input.promptVersion,
+        input,
+        compute,
+      );
 
       this.assertAnalysisResult(result);
       this.logger.log(
         `✅ [匹配度分析] 生成成功: 耗时=${Date.now() - startedAt}ms`,
       );
+      this.observeAi('resume_analysis', 'success', startedAt);
       return result;
     } catch (error) {
+      this.observeAi('resume_analysis', 'error', startedAt);
       this.logger.error(
         `❌ [匹配度分析] 生成失败: 耗时=${Date.now() - startedAt}ms, 错误=${this.getErrorMessage(error)}`,
       );
@@ -300,6 +360,7 @@ export class InterviewAIService {
   }
 
   /** 基于面试问答生成结构化评估报告。 */
+  @LogAiCall('assessment')
   async generateInterviewAssessmentReport(
     context: InterviewAssessmentContext,
   ): Promise<InterviewAssessmentResult> {
@@ -308,16 +369,13 @@ export class InterviewAIService {
       const prompt = PromptTemplate.fromTemplate(
         buildAssessmentPrompt(context),
       );
-      const parser = new JsonOutputParser<Record<string, unknown>>();
-      const chain = prompt
-        .pipe(this.aiModelFactory.createDefaultModel())
-        .pipe(parser);
-      const result = await chain.invoke({
+      const values = {
         interviewType: context.interviewType,
-        company: context.company || '未提供',
-        positionName: context.positionName || '未提供',
-        jd: context.jd || '未提供',
-        resumeContent: context.resumeContent || '未提供',
+        company: context.company || this.notProvided(context.locale),
+        positionName: context.positionName || this.notProvided(context.locale),
+        jd: context.jd || this.notProvided(context.locale),
+        resumeContent:
+          context.resumeContent || this.notProvided(context.locale),
         qaList: context.qaList
           .map(
             (qa, index) =>
@@ -327,14 +385,30 @@ export class InterviewAIService {
         qualityMetrics: context.answerQualityMetrics
           ? `\n## 回答质量统计\n- 总问题数: ${context.answerQualityMetrics.totalQuestions}\n- 平均回答长度: ${context.answerQualityMetrics.avgAnswerLength}字\n- 无效回答数: ${context.answerQualityMetrics.emptyAnswersCount}`
           : '',
-      });
+      };
+      const compute = () =>
+        this.invokeJson(
+          prompt,
+          this.aiModelFactory.createDefaultModel(),
+          values,
+        );
+      const result = await this.cachedJson(
+        'assessment',
+        context.cacheScope,
+        context.locale,
+        context.promptVersion,
+        values,
+        compute,
+      );
 
       this.assertAssessmentResult(result);
       this.logger.log(
         `✅ 评估报告生成完成: 耗时=${Date.now() - startedAt}ms, overallScore=${result.overallScore}`,
       );
+      this.observeAi('assessment', 'success', startedAt);
       return result;
     } catch (error) {
+      this.observeAi('assessment', 'error', startedAt);
       this.logger.error(`❌ 生成评估报告失败: ${this.getErrorMessage(error)}`);
       throw error;
     }
@@ -342,7 +416,7 @@ export class InterviewAIService {
 
   private buildPromptParams(input: ResumeQuizInput): ResumeQuizPromptParams {
     return {
-      company: input.company || '未提供',
+      company: input.company || this.notProvided(input.locale),
       positionName: input.positionName,
       salaryRange: this.formatSalaryRange(input.minSalary, input.maxSalary),
       jd: input.jd,
@@ -350,19 +424,121 @@ export class InterviewAIService {
     };
   }
 
+  private observeAi(
+    operation: string,
+    result: 'success' | 'error',
+    startedAt: number,
+  ): void {
+    this.metrics?.observeAi(
+      operation,
+      this.modelLabel(),
+      result,
+      (Date.now() - startedAt) / 1000,
+    );
+  }
+
+  private async invokeJson(
+    prompt: PromptTemplate,
+    model: BaseChatModel,
+    values: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
+    const formattedPrompt = await prompt.format(values);
+    const response: unknown = await model.invoke(formattedPrompt);
+    this.captureAiUsage(response);
+    const content =
+      response && typeof response === 'object' && 'content' in response
+        ? response.content
+        : response;
+    return new JsonOutputParser<Record<string, unknown>>().parse(
+      this.extractChunkText(content),
+    );
+  }
+
+  private captureAiUsage(value: unknown): void {
+    if (!value || typeof value !== 'object' || !('usage_metadata' in value))
+      return;
+    const usage = (value as { usage_metadata?: unknown }).usage_metadata;
+    if (!usage || typeof usage !== 'object') return;
+    const record = usage as Record<string, unknown>;
+    const input =
+      typeof record.input_tokens === 'number' ? record.input_tokens : 0;
+    const output =
+      typeof record.output_tokens === 'number' ? record.output_tokens : 0;
+    this.metrics?.observeAiUsage(this.modelLabel(), input, output);
+  }
+
+  private modelLabel(): string {
+    return this.configService?.get<string>('AI_PROVIDER') || 'deepseek';
+  }
+
+  private modelName(): string {
+    return this.modelLabel() === 'openai'
+      ? this.configService?.get<string>('OPENAI_MODEL') || 'gpt-4.1-mini'
+      : this.configService?.get<string>('DEEPSEEK_MODEL') || 'deepseek-chat';
+  }
+
+  private cachedJson(
+    operation: string,
+    scopeKey: string | undefined,
+    locale: 'zh-CN' | 'en-US' | undefined,
+    promptVersion: string | undefined,
+    input: unknown,
+    compute: () => Promise<Record<string, unknown>>,
+  ): Promise<Record<string, unknown>> {
+    if (!this.cache || !scopeKey) return compute();
+    return this.cache.getOrCompute(
+      {
+        operation,
+        scopeKey,
+        provider: this.modelLabel(),
+        model: this.modelName(),
+        locale: locale || 'zh-CN',
+        promptVersion: promptVersion || 'v1',
+        input,
+      },
+      compute,
+    );
+  }
+
   private formatConversationHistory(
     history: Array<{
       role: 'interviewer' | 'candidate';
       content: string;
     }>,
+    locale: 'zh-CN' | 'en-US' = 'zh-CN',
   ): string {
-    if (!history.length) return '（对话刚开始）';
+    if (!history.length)
+      return locale === 'en-US'
+        ? '(The conversation has just started.)'
+        : '（对话刚开始）';
     return history
       .map((item, index) => {
-        const role = item.role === 'interviewer' ? '面试官' : '候选人';
+        const role =
+          locale === 'en-US'
+            ? item.role === 'interviewer'
+              ? 'Interviewer'
+              : 'Candidate'
+            : item.role === 'interviewer'
+              ? '面试官'
+              : '候选人';
         return `${index + 1}. ${role}: ${item.content}`;
       })
       .join('\n\n');
+  }
+
+  private notProvided(locale: 'zh-CN' | 'en-US' | undefined): string {
+    return locale === 'en-US' ? 'Not provided' : '未提供';
+  }
+
+  private withOutputLanguage(
+    prompt: string,
+    locale: 'zh-CN' | 'en-US' | undefined,
+  ): string {
+    return `${prompt}\n\n# 输出语言\n${
+      locale === 'en-US'
+        ? 'Write every human-readable JSON value in natural professional English. Keep JSON keys and enum values unchanged.'
+        : '所有面向用户的 JSON 文本值必须使用自然、专业的简体中文。JSON 键名和枚举值保持不变。'
+    }`;
   }
 
   private extractChunkText(content: unknown): string {

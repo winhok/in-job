@@ -14,7 +14,8 @@ const ssePost = (path, params, options) => {
 			controller = new AbortController()
 			const headers = {
 				'Content-Type': 'application/json',
-				Accept: 'text/event-stream'
+				Accept: 'text/event-stream',
+				'Accept-Language': document.documentElement.lang || 'zh-CN'
 			}
 			if (token) headers.Authorization = `Bearer ${token}`
 			const response = await fetch(url, {
@@ -85,6 +86,20 @@ export const getAnalysisReportAPI = ($api, resultId) => {
 	})
 }
 
+export const submitReportFeedbackAPI = ($api, resultId, body) => {
+	return $api(`/interview/analysis/report/${resultId}/feedback`, {
+		method: 'POST',
+		body
+	})
+}
+
+export const requestManualReviewAPI = ($api, resultId, body) => {
+	return $api(`/interview/analysis/report/${resultId}/manual-review`, {
+		method: 'POST',
+		body
+	})
+}
+
 /**
  * 获取简历押题历史记录
  */
@@ -130,17 +145,6 @@ export const getInterviewBehaviorHistoryAPI = ($api, page, limit) => {
 export const getInterviewResultDetailAPI = ($api, resultId) => {
 	return $api(`/interview/resume/quiz/result/${resultId}`, {
 		method: 'GET'
-	})
-}
-
-/**
- * 使用 $api 的普通接口示例（非 SSE）
- * 如果后端提供了非流式的押题接口，可以这样使用：
- */
-export const generateResumeQuizAPI = ($api, params) => {
-	return $api('/interview/resume/quiz', {
-		method: 'POST',
-		body: params
 	})
 }
 

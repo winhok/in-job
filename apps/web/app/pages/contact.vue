@@ -1,9 +1,11 @@
 <template>
 	<section class="container py-12">
 		<div class="mb-8">
-			<h1 class="text-3xl font-bold text-neutral-900">联系我们</h1>
+			<h1 class="text-3xl font-bold text-neutral-900">
+				{{ $t('contact.title') }}
+			</h1>
 			<p class="mt-2 text-sm text-neutral-500">
-				有任何问题或建议，欢迎通过以下方式联系我们
+				{{ $t('contact.description') }}
 			</p>
 		</div>
 
@@ -19,15 +21,15 @@
 						<UIcon name="i-heroicons-qr-code" class="w-8 h-8 text-green-600" />
 					</div>
 					<h2 class="text-xl font-semibold text-neutral-900 mb-2">
-						关注更多面试机会
+						{{ $t('contact.follow') }}
 					</h2>
-					<p class="text-sm text-neutral-500 mb-4">微信扫码关注</p>
+					<p class="text-sm text-neutral-500 mb-4">{{ $t('contact.scan') }}</p>
 					<div
 						class="w-48 h-48 bg-gray-50 rounded-lg border border-gray-200 flex items-center justify-center p-2"
 					>
 						<img
 							:src="wechatQRCode"
-							alt="微信公众号二维码"
+							:alt="$t('footer.qrAlt')"
 							class="w-full h-full object-contain"
 						/>
 					</div>
@@ -48,9 +50,11 @@
 						/>
 					</div>
 					<h2 class="text-xl font-semibold text-neutral-900 mb-2">
-						微信添加好友
+						{{ $t('contact.addWechat') }}
 					</h2>
-					<p class="text-sm text-neutral-500 mb-4">添加微信好友进行咨询</p>
+					<p class="text-sm text-neutral-500 mb-4">
+						{{ $t('contact.addWechatDesc') }}
+					</p>
 					<div class="mt-auto w-full">
 						<div
 							class="bg-gray-50 rounded-lg border border-gray-200 p-4 mb-2 cursor-pointer hover:bg-gray-100 transition-colors"
@@ -66,7 +70,9 @@
 								/>
 							</div>
 						</div>
-						<p class="text-xs text-neutral-400">点击复制微信号</p>
+						<p class="text-xs text-neutral-400">
+							{{ $t('contact.copyWechat') }}
+						</p>
 					</div>
 				</div>
 			</div>
@@ -81,8 +87,12 @@
 					>
 						<UIcon name="i-heroicons-envelope" class="w-8 h-8 text-blue-600" />
 					</div>
-					<h2 class="text-xl font-semibold text-neutral-900 mb-2">邮箱联系</h2>
-					<p class="text-sm text-neutral-500 mb-4">发送邮件与我们取得联系</p>
+					<h2 class="text-xl font-semibold text-neutral-900 mb-2">
+						{{ $t('contact.email') }}
+					</h2>
+					<p class="text-sm text-neutral-500 mb-4">
+						{{ $t('contact.emailDesc') }}
+					</p>
 					<div class="mt-auto w-full">
 						<a
 							:href="`mailto:${email}`"
@@ -98,7 +108,9 @@
 								/>
 							</div>
 						</a>
-						<p class="text-xs text-neutral-400 mt-2">点击发送邮件</p>
+						<p class="text-xs text-neutral-400 mt-2">
+							{{ $t('contact.sendEmail') }}
+						</p>
 					</div>
 				</div>
 			</div>
@@ -106,28 +118,30 @@
 
 		<!-- 其他信息 -->
 		<div class="mt-12 bg-gray-50 rounded-lg border border-gray-200 p-6">
-			<h2 class="text-lg font-semibold text-neutral-900 mb-4">联系说明</h2>
+			<h2 class="text-lg font-semibold text-neutral-900 mb-4">
+				{{ $t('contact.notes') }}
+			</h2>
 			<ul class="space-y-2 text-sm text-neutral-600">
 				<li class="flex items-start">
 					<UIcon
 						name="i-heroicons-check-circle"
 						class="w-5 h-5 text-green-600 mr-2 flex-shrink-0 mt-0.5"
 					/>
-					<span>我们会尽快回复您的咨询，通常在工作日 24 小时内回复</span>
+					<span>{{ $t('contact.note1') }}</span>
 				</li>
 				<li class="flex items-start">
 					<UIcon
 						name="i-heroicons-check-circle"
 						class="w-5 h-5 text-green-600 mr-2 flex-shrink-0 mt-0.5"
 					/>
-					<span>如遇到紧急问题，建议优先使用微信方式联系</span>
+					<span>{{ $t('contact.note2') }}</span>
 				</li>
 				<li class="flex items-start">
 					<UIcon
 						name="i-heroicons-check-circle"
 						class="w-5 h-5 text-green-600 mr-2 flex-shrink-0 mt-0.5"
 					/>
-					<span>商务合作或其他重要事宜，请通过邮箱详细说明</span>
+					<span>{{ $t('contact.note3') }}</span>
 				</li>
 			</ul>
 		</div>
@@ -141,13 +155,14 @@ import wechatQRCode from '@/assets/imgs/sunday.jpg'
 
 const email = 'lgd_sunday@163.com'
 const wechatId = 'LGD_Sunday'
+const { t } = useI18n()
 
 // 复制微信号到剪贴板
 const copyWeChat = async () => {
 	try {
 		await navigator.clipboard.writeText(wechatId)
 		// 这里可以添加一个 toast 提示，但需要检查项目中是否有 toast 组件
-		alert('微信号已复制到剪贴板')
+		alert(t('footer.copyWechatSuccess'))
 	} catch (err) {
 		// 降级方案
 		const textArea = document.createElement('textarea')
@@ -156,25 +171,21 @@ const copyWeChat = async () => {
 		textArea.select()
 		try {
 			document.execCommand('copy')
-			alert('微信号已复制到剪贴板')
+			alert(t('footer.copyWechatSuccess'))
 		} catch (fallbackErr) {
-			alert('复制失败，请手动复制：' + wechatId)
+			alert(t('footer.copyWechatManual', { id: wechatId }))
 		}
 		document.body.removeChild(textArea)
 	}
 }
 
-useHead({
-	title: `联系我们 - ${SEO.siteName}`,
+useHead(() => ({
+	title: `${t('contact.title')} - ${t('brand.name')}`,
 	meta: [
-		{
-			name: 'description',
-			content:
-				'联系我们 - 通过微信、邮箱等方式与我们取得联系，我们会在24小时内回复您的问题'
-		},
+		{ name: 'description', content: t('seo.contactDescription') },
 		{ name: 'robots', content: 'index,follow' }
 	]
-})
+}))
 </script>
 
 <style scoped></style>

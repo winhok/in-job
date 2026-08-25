@@ -1,0 +1,43 @@
+{
+  "$schema": "https://raw.githubusercontent.com/wzf1997/delivery-harness/main/schemas/version.schema.json",
+  "schemaVersion": 1,
+  "version": "v0.4.0",
+  "title": "产品能力完整闭环",
+  "documents": [
+    {
+      "id": "product-capability-completion-requirement",
+      "type": "product-requirement",
+      "title": "产品能力完整闭环",
+      "ref": "openspec/changes/product-capability-completion/proposal.md",
+      "primary": true,
+      "revision": 1
+    },
+    {
+      "id": "product-capability-completion-design",
+      "type": "technical-design",
+      "title": "产品能力完整闭环技术设计",
+      "ref": "openspec/changes/product-capability-completion/design.md",
+      "revision": 1
+    },
+    {
+      "id": "capability-contract-audit",
+      "type": "technical-design",
+      "title": "核心能力契约审计",
+      "ref": "docs/capability-audit.md",
+      "revision": 1
+    }
+  ],
+  "openSpec": {
+    "changeId": "product-capability-completion",
+    "path": "openspec/changes/product-capability-completion",
+    "status": "applied"
+  },
+  "sources": [],
+  "acceptance": {
+    "status": "pending"
+  },
+  "deployments": [],
+  "release": {
+    "status": "pending"
+  }
+}

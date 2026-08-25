@@ -26,7 +26,7 @@
 								class="relative inline-flex rounded-full h-2 w-2 bg-primary-500"
 							></span>
 						</span>
-						押题 · 模拟 · 行测 · 三大服务全覆盖
+						{{ $t('home.hero.badge') }}
 					</div>
 
 					<!-- 新用户福利提示 -->
@@ -34,26 +34,18 @@
 						class="mb-4 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-white text-sm font-semibold shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/40 transition-all"
 					>
 						<UIcon name="i-heroicons-gift" class="w-5 h-5" />
-						<span>新用户送 20 旺旺币，可兑换任意服务</span>
+						<span>{{ $t('home.hero.gift') }}</span>
 					</div>
 					<h1
 						class="text-4xl md:text-6xl font-extrabold tracking-tight text-neutral-900 leading-[1.15]"
 					>
-						全链路 AI 面试服务<br />
-						<span
-							class="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-emerald-600"
-							>从押题到实战，一站式搞定</span
-						>
+						{{ $t('home.hero.title') }}<br />
+						<span class="text-primary-700">{{
+							$t('home.hero.titleAccent')
+						}}</span>
 					</h1>
 					<p class="mt-6 text-lg text-neutral-600 leading-relaxed">
-						面试汪提供
-						<span class="font-semibold text-primary-600">面试押题</span>、<span
-							class="font-semibold text-primary-600"
-							>专项面试模拟</span
-						>、<span class="font-semibold text-primary-600">行测+HR面试</span>
-						三大核心服务。不同于市面上单一的 AI
-						面试工具，我们覆盖面试全流程，助你面试命中率提升超
-						<span class="text-emerald-600 font-bold">80%</span>。
+						{{ $t('home.hero.description') }}
 					</p>
 					<div class="mt-8 flex flex-col sm:flex-row gap-4">
 						<UButton
@@ -61,7 +53,7 @@
 							color="primary"
 							to="/interview/start"
 							class="px-8 font-semibold shadow-lg shadow-primary-500/20 hover:shadow-primary-500/30 transition-all"
-							>立即体验三大面试服务</UButton
+							>{{ $t('home.hero.primaryCta') }}</UButton
 						>
 						<UButton
 							size="xl"
@@ -69,7 +61,7 @@
 							variant="ghost"
 							to="/#features"
 							class="px-8 font-medium hover:bg-neutral-100"
-							>了解服务详情</UButton
+							>{{ $t('home.hero.secondaryCta') }}</UButton
 						>
 					</div>
 					<div
@@ -80,8 +72,12 @@
 								<UIcon name="i-heroicons-document-text" class="w-4 h-4" />
 							</div>
 							<div>
-								<p class="font-semibold text-neutral-700">面试押题</p>
-								<p class="text-xs text-neutral-500">3分钟预测高频题</p>
+								<p class="font-semibold text-neutral-700">
+									{{ $t('home.hero.quizName') }}
+								</p>
+								<p class="text-xs text-neutral-500">
+									{{ $t('home.hero.quizShort') }}
+								</p>
 							</div>
 						</div>
 						<div class="flex items-center gap-2">
@@ -89,8 +85,12 @@
 								<UIcon name="i-heroicons-bolt" class="w-4 h-4" />
 							</div>
 							<div>
-								<p class="font-semibold text-neutral-700">专项面试</p>
-								<p class="text-xs text-neutral-500">1v1 实战模拟</p>
+								<p class="font-semibold text-neutral-700">
+									{{ $t('home.hero.specialName') }}
+								</p>
+								<p class="text-xs text-neutral-500">
+									{{ $t('home.hero.specialShort') }}
+								</p>
 							</div>
 						</div>
 						<div class="flex items-center gap-2">
@@ -101,8 +101,12 @@
 								/>
 							</div>
 							<div>
-								<p class="font-semibold text-neutral-700">行测+HR</p>
-								<p class="text-xs text-neutral-500">综合素质评估</p>
+								<p class="font-semibold text-neutral-700">
+									{{ $t('home.hero.behaviorName') }}
+								</p>
+								<p class="text-xs text-neutral-500">
+									{{ $t('home.hero.behaviorShort') }}
+								</p>
 							</div>
 						</div>
 					</div>
@@ -126,9 +130,9 @@
 								<div class="h-3 w-3 rounded-full bg-amber-400"></div>
 								<div class="h-3 w-3 rounded-full bg-emerald-400"></div>
 							</div>
-							<span class="text-xs font-medium text-neutral-400"
-								>模拟面试 · 示例</span
-							>
+							<span class="text-xs font-medium text-neutral-400">{{
+								$t('home.hero.demo')
+							}}</span>
 						</div>
 						<div class="p-6 space-y-6">
 							<!-- Interviewer Message -->
@@ -140,15 +144,17 @@
 								</div>
 								<div class="flex-1 space-y-1">
 									<div class="flex items-center gap-2">
-										<span class="text-sm font-semibold text-neutral-900"
-											>面试官</span
-										>
-										<span class="text-xs text-neutral-400">刚刚</span>
+										<span class="text-sm font-semibold text-neutral-900">{{
+											$t('home.hero.interviewer')
+										}}</span>
+										<span class="text-xs text-neutral-400">{{
+											$t('home.hero.justNow')
+										}}</span>
 									</div>
 									<div
 										class="p-4 rounded-2xl rounded-tl-none bg-white border border-neutral-100 shadow-sm text-neutral-700 text-sm leading-relaxed"
 									>
-										请介绍一个你主导过的性能优化案例，包含指标与落地策略。
+										{{ $t('home.hero.demoQuestion') }}
 									</div>
 								</div>
 							</div>
@@ -162,32 +168,31 @@
 								</div>
 								<div class="flex-1 space-y-1">
 									<div class="flex items-center gap-2">
-										<span class="text-sm font-semibold text-neutral-900"
-											>AI 面试助手</span
-										>
+										<span class="text-sm font-semibold text-neutral-900">{{
+											$t('home.hero.assistant')
+										}}</span>
 										<span
 											class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-100 text-emerald-700"
-											>评分 85</span
+											>{{ $t('home.hero.score') }}</span
 										>
 									</div>
 									<div
-										class="p-4 rounded-2xl rounded-tl-none bg-emerald-50/50 border border-emerald-100/50 text-neutral-700 text-sm leading-relaxed"
+										class="p-4 rounded-2xl rounded-tl-none bg-emerald-50/50 border border-emerald-100/50 text-emerald-950 text-sm leading-relaxed"
 									>
 										<p>
-											<span class="font-medium text-emerald-800"
-												>分析反馈：</span
-											>
-											回答结构清晰，采用了 STAR 原则。但缺少量化指标（如
-											P95、错误率下降百分比）。
+											<span class="font-medium text-emerald-800">{{
+												$t('home.hero.feedbackLabel')
+											}}</span>
+											{{ $t('home.hero.feedback') }}
 										</p>
 										<div class="mt-3 flex gap-2">
 											<span
 												class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-white text-emerald-600 border border-emerald-100"
-												>建议补充数据</span
+												>{{ $t('home.hero.addData') }}</span
 											>
 											<span
 												class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-white text-emerald-600 border border-emerald-100"
-												>增加对比</span
+												>{{ $t('home.hero.addComparison') }}</span
 											>
 										</div>
 									</div>
@@ -199,7 +204,7 @@
 							<div
 								class="h-10 rounded-xl bg-white border border-neutral-200 shadow-sm flex items-center px-4 text-sm text-neutral-400"
 							>
-								输入你的回答...
+								{{ $t('home.hero.answerPlaceholder') }}
 							</div>
 						</div>
 					</div>

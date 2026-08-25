@@ -1,0 +1,56 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "graphTooltip": 1,
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "HTTP requests per second",
+      "targets": [{ "expr": "sum(rate(http_request_duration_seconds_count[5m]))", "legendFormat": "requests/s" }],
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 }
+    },
+    {
+      "type": "timeseries",
+      "title": "HTTP p95 latency",
+      "targets": [{ "expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket[5m])))", "legendFormat": "p95" }],
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 }
+    },
+    {
+      "type": "timeseries",
+      "title": "AI calls",
+      "targets": [{ "expr": "sum by (operation, result) (rate(ai_calls_total[5m]))", "legendFormat": "{{operation}} {{result}}" }],
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 }
+    },
+    {
+      "type": "stat",
+      "title": "MongoDB state",
+      "targets": [{ "expr": "mongodb_connection_state", "legendFormat": "ready state" }],
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 8 }
+    },
+    {
+      "type": "timeseries",
+      "title": "Business events",
+      "targets": [{ "expr": "sum by (event, result) (rate(business_events_total[5m]))", "legendFormat": "{{event}} {{result}}" }],
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 8 }
+    },
+    {
+      "type": "timeseries",
+      "title": "AI token rate",
+      "targets": [{ "expr": "sum by (model, direction) (rate(ai_tokens_total[5m]))", "legendFormat": "{{model}} {{direction}}" }],
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 }
+    },
+    {
+      "type": "stat",
+      "title": "Estimated AI cost (yuan)",
+      "targets": [{ "expr": "sum(ai_estimated_cost_yuan_total)", "legendFormat": "cost" }],
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 }
+    }
+  ],
+  "schemaVersion": 41,
+  "tags": ["in-job"],
+  "templating": { "list": [] },
+  "time": { "from": "now-6h", "to": "now" },
+  "title": "in-job overview",
+  "uid": "in-job-overview",
+  "version": 1
+}

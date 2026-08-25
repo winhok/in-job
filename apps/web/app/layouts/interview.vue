@@ -15,27 +15,28 @@
 							class="hover:text-primary-600 transition-colors flex items-center gap-1"
 						>
 							<UIcon name="i-heroicons-home" class="w-4 h-4" />
-							首页
+							{{ $t('nav.home') }}
 						</NuxtLink>
 						<span class="text-slate-300">/</span>
 						<NuxtLink
 							@click="onGoStart"
 							class="hover:text-primary-600 transition-colors flex items-center gap-1"
 						>
-							{{ isHistory ? '查看服务记录' : '开始专项服务' }}
+							{{ isHistory ? $t('nav.viewRecords') : $t('nav.startService') }}
 						</NuxtLink>
 						<span class="text-slate-300">/</span>
 						<span class="text-slate-900 font-medium">{{ pageTitle }}</span>
 					</div>
 
 					<div class="flex items-center gap-4">
+						<LanguageSwitcher />
 						<div
 							class="text-xs text-slate-400 flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-full border border-slate-200"
 						>
 							<span
 								class="w-2 h-2 rounded-full bg-green-500 animate-pulse"
 							></span>
-							AI 服务在线
+							{{ $t('nav.aiOnline') }}
 						</div>
 					</div>
 				</header>
@@ -68,11 +69,12 @@ const toast = useToast()
 const interviewStore = useInterviewStore()
 const userStore = useUserStore()
 const { $api } = useNuxtApp()
+const { t } = useI18n()
 
 // 页面标题映射
 const pageTitle = computed(() => {
 	if (route.path === '/interview/start') {
-		return '选择岗位与简历'
+		return t('interview.selectPositionResume')
 	}
 
 	// 处理统一的 /interview 页面
@@ -85,7 +87,7 @@ const pageTitle = computed(() => {
 		} else if (serviceType === SERVICE_TAGS.BEHAVIOR) {
 			return serviceHighlights[2].title
 		} else {
-			return '未知路径'
+			return t('common.unknownPath')
 		}
 	}
 })
@@ -210,8 +212,8 @@ const isHistory = computed(() => {
 const onGoHome = () => {
 	if (isProgressing.value) {
 		toast.add({
-			title: '不要呀～～',
-			description: '这时跳转会导致白白浪费一次押题机会哦～～',
+			title: t('interview.navigationBlockedTitle'),
+			description: t('interview.quizNavigationBlocked'),
 			color: 'warning',
 			icon: 'i-heroicons-lock-closed'
 		})
@@ -221,8 +223,8 @@ const onGoHome = () => {
 	// 如果是在面试中，那么需要给用户提示，先结束面试
 	if (isInterviewing.value) {
 		toast.add({
-			title: '请先结束面试，再进行跳转',
-			description: '注意：中途结束面试，会导致消费一次面试机会哦～～',
+			title: t('interview.finishBeforeLeaving'),
+			description: t('interview.finishBeforeLeavingDesc'),
 			color: 'warning',
 			icon: 'i-heroicons-lock-closed'
 		})
@@ -240,8 +242,8 @@ const onGoStart = () => {
 
 	if (isProgressing.value) {
 		toast.add({
-			title: '不要呀～～',
-			description: '这时跳转会导致白白浪费一次押题机会哦～～',
+			title: t('interview.navigationBlockedTitle'),
+			description: t('interview.quizNavigationBlocked'),
 			color: 'warning',
 			icon: 'i-heroicons-lock-closed'
 		})
@@ -251,8 +253,8 @@ const onGoStart = () => {
 	// 如果是在面试中，那么需要给用户提示，先结束面试
 	if (isInterviewing.value) {
 		toast.add({
-			title: '请先结束面试，再进行跳转',
-			description: '注意：中途结束面试，会导致消费一次面试机会哦～～',
+			title: t('interview.finishBeforeLeaving'),
+			description: t('interview.finishBeforeLeavingDesc'),
 			color: 'warning',
 			icon: 'i-heroicons-lock-closed'
 		})

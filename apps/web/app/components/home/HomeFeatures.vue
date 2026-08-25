@@ -5,15 +5,10 @@
 				<h2
 					class="text-3xl md:text-4xl font-bold text-neutral-900 tracking-tight"
 				>
-					三大服务 × 全流程覆盖
+					{{ $t('home.services.coverageTitle') }}
 				</h2>
 				<p class="mt-4 text-lg text-neutral-600">
-					不同于市面上单一的 AI 面试模拟工具，面试汪提供从<span
-						class="font-semibold text-primary-600"
-						>押题预测</span
-					>到<span class="font-semibold text-primary-600">实战模拟</span
-					>再到<span class="font-semibold text-primary-600">综合评估</span
-					>的完整解决方案，全方位提升面试竞争力。
+					{{ $t('home.services.coverageDesc') }}
 				</p>
 			</div>
 			<div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -27,15 +22,16 @@
 						<UIcon name="i-heroicons-document-text" class="w-6 h-6" />
 					</div>
 					<div class="flex items-center gap-2 mb-2">
-						<h3 class="text-xl font-bold text-neutral-900">面试押题</h3>
+						<h3 class="text-xl font-bold text-neutral-900">
+							{{ $t('home.services.quiz') }}
+						</h3>
 						<span
 							class="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold"
-							>核心服务</span
+							>{{ $t('home.services.core') }}</span
 						>
 					</div>
 					<p class="mt-3 text-neutral-600 leading-relaxed">
-						基于岗位 JD 和简历，AI 智能预测 80%
-						高频面试题，附带参考答案与回答技巧，3 分钟快速生成。
+						{{ $t('home.services.quizFeatureDesc') }}
 					</p>
 				</div>
 
@@ -49,15 +45,16 @@
 						<UIcon name="i-heroicons-bolt" class="w-6 h-6" />
 					</div>
 					<div class="flex items-center gap-2 mb-2">
-						<h3 class="text-xl font-bold text-neutral-900">专项面试</h3>
+						<h3 class="text-xl font-bold text-neutral-900">
+							{{ $t('home.services.special') }}
+						</h3>
 						<span
 							class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold"
-							>核心服务</span
+							>{{ $t('home.services.core') }}</span
 						>
 					</div>
 					<p class="mt-3 text-neutral-600 leading-relaxed">
-						针对技术面、业务面进行深度模拟，AI
-						面试官实时追问与反馈，支持语音/文字，约 1 小时实战训练。
+						{{ $t('home.services.specialFeatureDesc') }}
 					</p>
 				</div>
 
@@ -71,15 +68,16 @@
 						<UIcon name="i-heroicons-chat-bubble-left-right" class="w-6 h-6" />
 					</div>
 					<div class="flex items-center gap-2 mb-2">
-						<h3 class="text-xl font-bold text-neutral-900">行测+HR面试</h3>
+						<h3 class="text-xl font-bold text-neutral-900">
+							{{ $t('home.services.behavior') }}
+						</h3>
 						<span
 							class="px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 text-[10px] font-bold"
-							>核心服务</span
+							>{{ $t('home.services.core') }}</span
 						>
 					</div>
 					<p class="mt-3 text-neutral-600 leading-relaxed">
-						覆盖行政能力测试 + HR 软技能面试，评估沟通表达与情商，约 45
-						分钟全面提升综合素质。
+						{{ $t('home.services.behaviorFeatureDesc') }}
 					</p>
 				</div>
 
@@ -92,10 +90,11 @@
 					>
 						<UIcon name="i-heroicons-chart-pie" class="w-6 h-6" />
 					</div>
-					<h3 class="text-xl font-semibold text-neutral-900">结构化评估报告</h3>
+					<h3 class="text-xl font-semibold text-neutral-900">
+						{{ $t('home.services.structuredReport') }}
+					</h3>
 					<p class="mt-3 text-neutral-600 leading-relaxed">
-						覆盖
-						<StarMethodModal /> 模型、技能矩阵、雷达图与改进建议，一键导出复盘。
+						{{ $t('home.services.structuredReportDesc') }}
 					</p>
 				</div>
 
@@ -107,9 +106,11 @@
 					>
 						<UIcon name="i-heroicons-sparkles" class="w-6 h-6" />
 					</div>
-					<h3 class="text-xl font-semibold text-neutral-900">真实公司风格</h3>
+					<h3 class="text-xl font-semibold text-neutral-900">
+						{{ $t('home.services.realisticStyle') }}
+					</h3>
 					<p class="mt-3 text-neutral-600 leading-relaxed">
-						按公司/岗位/等级定制问法与偏好，模拟真实面试氛围与风格。
+						{{ $t('home.services.realisticStyleDesc') }}
 					</p>
 				</div>
 
@@ -121,9 +122,11 @@
 					>
 						<UIcon name="i-heroicons-shield-check" class="w-6 h-6" />
 					</div>
-					<h3 class="text-xl font-semibold text-neutral-900">隐私与数据安全</h3>
+					<h3 class="text-xl font-semibold text-neutral-900">
+						{{ $t('home.services.privacy') }}
+					</h3>
 					<p class="mt-3 text-neutral-600 leading-relaxed">
-						企业级数据加密，你的简历与面试数据只属于你，安全可控。
+						{{ $t('home.services.privacyDesc') }}
 					</p>
 				</div>
 			</div>

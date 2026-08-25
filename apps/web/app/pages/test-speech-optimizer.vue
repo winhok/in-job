@@ -225,6 +225,9 @@
 </template>
 
 <script setup>
+if (!import.meta.dev) {
+	throw createError({ statusCode: 404, statusMessage: 'Not Found' })
+}
 import { ref, computed } from 'vue'
 import { SpeechRecognitionOptimizer } from '@/utils/speechRecognitionOptimizer'
 import { TECH_VOCABULARY } from '@/utils/speechRecognitionOptimizer'
@@ -369,4 +372,3 @@ textarea {
 	font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
 }
 </style>
-

@@ -13,24 +13,23 @@
 						<!-- 关于我们 -->
 						<div>
 							<h3 class="text-sm font-semibold text-neutral-900 mb-4">
-								关于我们
+								{{ $t('footer.about') }}
 							</h3>
 							<div class="flex items-center gap-2 mb-3">
 								<ww-svg-icon name="hero" class="h-6 w-6"></ww-svg-icon>
-								<span class="text-base font-semibold text-neutral-900"
-									>面试汪</span
-								>
+								<span class="text-base font-semibold text-neutral-900">{{
+									$t('brand.name')
+								}}</span>
 							</div>
 							<p class="text-sm text-neutral-600 leading-relaxed">
-								极简三步，完成 AI 面试。专业的 AI
-								面试平台，帮助您更好地准备面试。
+								{{ $t('brand.description') }}
 							</p>
 						</div>
 
 						<!-- 快速链接 -->
 						<div>
 							<h3 class="text-sm font-semibold text-neutral-900 mb-4">
-								快速链接
+								{{ $t('footer.quickLinks') }}
 							</h3>
 							<ul class="space-y-2 text-sm">
 								<li>
@@ -38,7 +37,7 @@
 										to="/interview/start"
 										class="text-neutral-600 hover:text-neutral-900 transition-colors"
 									>
-										开始 AI 面试
+										{{ $t('footer.startInterview') }}
 									</NuxtLink>
 								</li>
 								<li>
@@ -46,7 +45,7 @@
 										to="/faq"
 										class="text-neutral-600 hover:text-neutral-900 transition-colors"
 									>
-										常见问题
+										{{ $t('nav.faq') }}
 									</NuxtLink>
 								</li>
 								<li>
@@ -54,7 +53,7 @@
 										to="/contact"
 										class="text-neutral-600 hover:text-neutral-900 transition-colors"
 									>
-										联系我们
+										{{ $t('nav.contact') }}
 									</NuxtLink>
 								</li>
 								<li>
@@ -64,7 +63,7 @@
 										rel="noopener noreferrer"
 										class="text-neutral-600 hover:text-neutral-900 transition-colors inline-flex items-center gap-1"
 									>
-										简历汪
+										{{ $t('footer.resumeMaker') }}
 										<UIcon
 											name="i-heroicons-arrow-top-right-on-square"
 											class="w-3.5 h-3.5"
@@ -77,7 +76,7 @@
 						<!-- 联系方式 -->
 						<div>
 							<h3 class="text-sm font-semibold text-neutral-900 mb-4">
-								联系我们
+								{{ $t('nav.contact') }}
 							</h3>
 							<ul class="space-y-3 text-sm">
 								<li class="flex items-center gap-2 text-neutral-600">
@@ -85,7 +84,7 @@
 										name="i-heroicons-chat-bubble-left-right"
 										class="w-4 h-4 text-green-600 shrink-0"
 									/>
-									<span>微信：</span>
+									<span>{{ $t('footer.wechat') }}</span>
 									<button
 										@click="copyWeChat"
 										class="font-mono hover:text-neutral-900 transition-colors"
@@ -112,7 +111,9 @@
 										name="i-heroicons-qr-code"
 										class="w-4 h-4 text-green-600 shrink-0 mt-0.5"
 									/>
-									<span class="cursor-pointer">关注公众号获取更多信息</span>
+									<span class="cursor-pointer">{{
+										$t('footer.followWechat')
+									}}</span>
 									<!-- 二维码悬停展示 -->
 									<div
 										class="absolute bottom-full left-0 mb-2 opacity-100 transition-all duration-200 z-50 w-[520px] invisible group-hover:opacity-100 group-hover:visible"
@@ -122,13 +123,13 @@
 										>
 											<img
 												:src="wechatQRCode"
-												alt="微信公众号二维码"
+												:alt="$t('footer.qrAlt')"
 												class="w-[520px] object-contain"
 											/>
 											<p
 												class="text-xs text-center text-neutral-600 mt-2 whitespace-nowrap"
 											>
-												扫码关注公众号
+												{{ $t('footer.scanWechat') }}
 											</p>
 										</div>
 										<!-- 小三角箭头 -->
@@ -146,7 +147,7 @@
 						<!-- 相关产品 -->
 						<div>
 							<h3 class="text-sm font-semibold text-neutral-900 mb-4">
-								相关产品
+								{{ $t('footer.relatedProducts') }}
 							</h3>
 							<a
 								href="https://www.lgdsunday.club/"
@@ -163,8 +164,12 @@
 									/>
 								</div>
 								<div>
-									<div class="font-semibold text-neutral-900">简历汪</div>
-									<div class="text-xs text-neutral-500">免费在线制作简历</div>
+									<div class="font-semibold text-neutral-900">
+										{{ $t('footer.resumeMaker') }}
+									</div>
+									<div class="text-xs text-neutral-500">
+										{{ $t('footer.resumeMakerDesc') }}
+									</div>
 								</div>
 								<UIcon
 									name="i-heroicons-arrow-top-right-on-square"
@@ -180,7 +185,9 @@
 							class="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-neutral-500"
 						>
 							<div class="flex flex-col md:flex-row items-center gap-4">
-								<p>© {{ new Date().getFullYear() }} 面试汪 · AI 面试平台</p>
+								<p>
+									© {{ new Date().getFullYear() }} {{ $t('footer.copyright') }}
+								</p>
 								<span class="hidden md:inline">|</span>
 								<a
 									href="https://beian.miit.gov.cn/"
@@ -188,7 +195,7 @@
 									rel="noopener noreferrer"
 									class="hover:text-neutral-700 transition-colors"
 								>
-									鲁 ICP 备 2025206060 号-1
+									{{ $t('footer.icp') }}
 								</a>
 							</div>
 							<div class="flex items-center gap-4">
@@ -196,14 +203,14 @@
 									to="/agreement"
 									class="hover:text-neutral-700 transition-colors"
 								>
-									用户协议
+									{{ $t('footer.agreement') }}
 								</NuxtLink>
 								<span>|</span>
 								<NuxtLink
 									to="/policy"
 									class="hover:text-neutral-700 transition-colors"
 								>
-									隐私政策
+									{{ $t('footer.privacy') }}
 								</NuxtLink>
 							</div>
 						</div>
@@ -223,6 +230,7 @@ import wechatQRCode from '@/assets/imgs/sunday-gong-zhong-hao.png'
 const toaster = { position: 'top-right' }
 const uiStore = useUIStore()
 const toast = useToast()
+const { t } = useI18n()
 
 const wechatId = 'LGD_Sunday'
 
@@ -231,8 +239,8 @@ const copyWeChat = async () => {
 	try {
 		await navigator.clipboard.writeText(wechatId)
 		toast.add({
-			title: '复制成功',
-			description: '微信号已复制到剪贴板',
+			title: t('common.copySuccess'),
+			description: t('footer.copyWechatSuccess'),
 			color: 'green'
 		})
 	} catch (err) {
@@ -246,14 +254,14 @@ const copyWeChat = async () => {
 		try {
 			document.execCommand('copy')
 			toast.add({
-				title: '复制成功',
-				description: '微信号已复制到剪贴板',
+				title: t('common.copySuccess'),
+				description: t('footer.copyWechatSuccess'),
 				color: 'green'
 			})
 		} catch (fallbackErr) {
 			toast.add({
-				title: '复制失败',
-				description: '请手动复制：' + wechatId,
+				title: t('common.copyFailed'),
+				description: t('footer.copyWechatManual', { id: wechatId }),
 				color: 'red'
 			})
 		}

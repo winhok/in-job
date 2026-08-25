@@ -64,13 +64,13 @@
 								name="i-heroicons-building-office-2"
 								class="w-4 h-4 text-neutral-400 group-focus-within:text-primary-500 transition-colors"
 							/>
-							目标公司
+							{{ $t('interview.form.targetCompany') }}
 						</span>
 					</label>
 					<UInput
 						v-model="interviewStore.selectedPosition.company"
 						class="w-full text-sm"
-						placeholder="请输入公司全称，如：字节跳动"
+						:placeholder="$t('interview.form.companyPlaceholder')"
 						size="lg"
 					/>
 				</div>
@@ -85,13 +85,13 @@
 								name="i-heroicons-building-office-2"
 								class="w-4 h-4 text-neutral-400 group-focus-within:text-primary-500 transition-colors"
 							/>
-							岗位名称
+							{{ $t('interview.form.roleName') }}
 						</span>
 					</label>
 					<UInput
 						v-model="interviewStore.selectedPosition.positionName"
 						class="w-full text-sm"
-						placeholder="请输入岗位名称，如：前端开发工程师"
+						:placeholder="$t('interview.form.rolePlaceholder')"
 						size="lg"
 					/>
 				</div>
@@ -106,12 +106,14 @@
 								name="i-heroicons-currency-yen"
 								class="w-4 h-4 text-neutral-400 group-focus-within:text-primary-500 transition-colors"
 							/>
-							薪资范围
+							{{ $t('interview.form.salary') }}
 							<span
 								class="text-[10px] font-medium text-red-500 bg-red-50 px-2 py-0.5 rounded-full border border-red-100"
-								>必填</span
+								>{{ $t('interview.form.required') }}</span
 							>
-							<span class="text-xs text-neutral-400">以 千（K）为单位</span>
+							<span class="text-xs text-neutral-400">{{
+								$t('interview.form.salaryUnitHint')
+							}}</span>
 						</span>
 					</label>
 					<div class="flex items-center gap-3">
@@ -119,12 +121,14 @@
 							<UInput
 								v-model="interviewStore.selectedPosition.minSalary"
 								class="w-full"
-								placeholder="最低 (k)"
+								:placeholder="$t('interview.form.minSalary')"
 								size="lg"
 								type="number"
 							>
 								<template #trailing>
-									<span class="text-xs text-neutral-400">k/月</span>
+									<span class="text-xs text-neutral-400">{{
+										$t('interview.form.monthlyK')
+									}}</span>
 								</template>
 							</UInput>
 						</div>
@@ -135,12 +139,14 @@
 							<UInput
 								v-model="interviewStore.selectedPosition.maxSalary"
 								class="w-full"
-								placeholder="最高 (k)"
+								:placeholder="$t('interview.form.maxSalary')"
 								size="lg"
 								type="number"
 							>
 								<template #trailing>
-									<span class="text-xs text-neutral-400">k/月</span>
+									<span class="text-xs text-neutral-400">{{
+										$t('interview.form.monthlyK')
+									}}</span>
 								</template>
 							</UInput>
 						</div>
@@ -158,14 +164,17 @@
 							name="i-heroicons-document-text"
 							class="w-4 h-4 text-neutral-400 group-focus-within:text-primary-500 transition-colors"
 						/>
-						岗位职责 (JD)
+						{{ $t('interview.form.jd') }}
 						<span
 							class="text-[10px] font-medium text-red-500 bg-red-50 px-2 py-0.5 rounded-full border border-red-100"
-							>必填</span
+							>{{ $t('interview.form.required') }}</span
 						>
-						<span class="text-xs text-neutral-400"
-							>{{ MIN_JD_LENGTH }} ~ {{ MAX_JD_LENGTH }} 字</span
-						>
+						<span class="text-xs text-neutral-400">{{
+							$t('interview.form.charsRange', {
+								min: MIN_JD_LENGTH,
+								max: MAX_JD_LENGTH
+							})
+						}}</span>
 					</label>
 					<div class="flex items-center gap-2">
 						<transition
@@ -181,7 +190,7 @@
 								class="text-[10px] bg-green-50 text-green-600 px-2 py-0.5 rounded-full border border-green-100 flex items-center gap-1"
 							>
 								<UIcon name="i-heroicons-check" class="w-3 h-3" />
-								内容已输入
+								{{ $t('interview.form.entered') }}
 							</span>
 						</transition>
 						<span
@@ -191,7 +200,11 @@
 									interviewStore.selectedPosition?.jd?.length > 0
 							}"
 						>
-							{{ interviewStore.selectedPosition?.jd?.length || 0 }} 字
+							{{
+								$t('interview.form.chars', {
+									count: interviewStore.selectedPosition?.jd?.length || 0
+								})
+							}}
 						</span>
 					</div>
 				</div>
@@ -201,14 +214,7 @@
 						v-model="interviewStore.selectedPosition.jd"
 						minlength="50"
 						maxlength="800"
-						placeholder="请直接粘贴目标岗位的职位描述（JD）...
-
-💡 提示：越详细的 JD（包含任职要求、技术栈、加分项），生成的押题越准确，最少 50 字，最大 2000 字。
-
-示例：
-1. 负责前端核心业务功能的开发与维护
-2. 熟练掌握 Vue3、TypeScript 等技术栈
-3. 具备良好的跨部门沟通协作能力"
+						:placeholder="$t('interview.form.jdPlaceholder')"
 						:rows="15"
 						size="lg"
 						required
@@ -234,7 +240,9 @@
 				class="pt-4 border-t border-gray-100 flex items-center justify-between"
 			>
 				<div class="text-xs text-neutral-400 hidden sm:block">
-					* 点击按钮即表示消耗 1 次{{ serviceConfig.consumeText }}
+					{{
+						$t('interview.form.consume', { name: serviceConfig.consumeText })
+					}}
 				</div>
 				<UButton
 					size="xl"
@@ -277,77 +285,77 @@ const emit = defineEmits(['submit'])
 const interviewStore = useInterviewStore()
 
 const toast = useToast()
+const { t } = useI18n()
 
 // 服务类型配置
-const SERVICE_CONFIGS = {
+const SERVICE_CONFIGS = computed(() => ({
 	resume: {
-		title: '开启 AI 精准押题',
-		badge: '采用 Ultra 级模型',
-		description:
-			'请输入目标岗位的详细信息，AI 将为您生成专属的预测题库与高分回答思路。',
+		title: t('interview.form.resumeTitle'),
+		badge: t('interview.form.resumeBadge'),
+		description: t('interview.form.resumeDesc'),
 		points: [
-			'智能分析岗位 JD',
-			'预测高频面试题',
-			'提供参考答案与技巧',
-			'生成专业评估报告'
+			t('interview.form.resumePoints.0'),
+			t('interview.form.resumePoints.1'),
+			t('interview.form.resumePoints.2'),
+			t('interview.form.resumePoints.3')
 		],
 		icon: 'i-heroicons-document-text',
 		iconClass: 'text-blue-600',
 		iconBgClass: 'bg-blue-100',
 		containerClass: 'bg-blue-50/40 border-blue-100/50',
 		badgeClass: 'text-blue-600 bg-blue-50 border-blue-100',
-		buttonText: '立即押题',
+		buttonText: t('interview.form.resumeButton'),
 		buttonIcon: 'i-heroicons-sparkles',
 		buttonColor: 'primary',
-		consumeText: '押题权益'
+		consumeText: t('interview.form.resumeConsume')
 	},
 	special: {
-		title: '开启专项面试模拟',
-		badge: '1v1 实战训练',
-		description:
-			'请输入目标岗位的详细信息，AI 面试官将与您进行深度 1v1 模拟面试对话。',
+		title: t('interview.form.specialTitle'),
+		badge: t('interview.form.specialBadge'),
+		description: t('interview.form.specialDesc'),
 		points: [
-			'真实面试场景模拟',
-			'AI 智能追问反馈',
-			'多轮深度问答评估',
-			'生成专业评估报告'
+			t('interview.form.specialPoints.0'),
+			t('interview.form.specialPoints.1'),
+			t('interview.form.specialPoints.2'),
+			t('interview.form.specialPoints.3')
 		],
 		icon: 'i-heroicons-bolt',
 		iconClass: 'text-emerald-600',
 		iconBgClass: 'bg-emerald-100',
 		containerClass: 'bg-emerald-50/40 border-emerald-100/50',
 		badgeClass: 'text-emerald-600 bg-emerald-50 border-emerald-100',
-		buttonText: '开始面试模拟',
+		buttonText: t('interview.form.specialButton'),
 		buttonIcon: 'i-heroicons-bolt',
 		buttonColor: 'primary',
-		consumeText: '专项面试权益'
+		consumeText: t('interview.form.specialConsume')
 	},
 	behavior: {
-		title: '开启行测 + HR 面试',
-		badge: '综合能力评估',
-		description:
-			'请输入目标岗位的详细信息，系统将为您生成行测题库与 HR 面试评估方案。',
+		title: t('interview.form.behaviorTitle'),
+		badge: t('interview.form.behaviorBadge'),
+		description: t('interview.form.behaviorDesc'),
 		points: [
-			'行测题库模拟测试',
-			'HR 面试软技能评估',
-			'沟通表达能力分析',
-			'生成专业评估报告'
+			t('interview.form.behaviorPoints.0'),
+			t('interview.form.behaviorPoints.1'),
+			t('interview.form.behaviorPoints.2'),
+			t('interview.form.behaviorPoints.3')
 		],
 		icon: 'i-heroicons-chat-bubble-left-right',
 		iconClass: 'text-purple-600',
 		iconBgClass: 'bg-purple-100',
 		containerClass: 'bg-purple-50/40 border-purple-100/50',
 		badgeClass: 'text-purple-600 bg-purple-50 border-purple-100',
-		buttonText: '开始行测+HR',
+		buttonText: t('interview.form.behaviorButton'),
 		buttonIcon: 'i-heroicons-chat-bubble-left-right',
 		buttonColor: 'primary',
-		consumeText: '行测+HR权益'
+		consumeText: t('interview.form.behaviorConsume')
 	}
-}
+}))
 
 // 根据服务类型获取配置
 const serviceConfig = computed(() => {
-	return SERVICE_CONFIGS[props.serviceType] || SERVICE_CONFIGS.resume
+	return (
+		SERVICE_CONFIGS.value[props.serviceType] || SERVICE_CONFIGS.value.resume
+	)
 })
 
 /**
@@ -360,8 +368,8 @@ const handleSubmit = () => {
 		!interviewStore.selectedPosition.maxSalary
 	) {
 		toast.add({
-			title: '请填写薪资范围',
-			description: '以便生成更加准确的服务数据',
+			title: t('interview.form.salaryError'),
+			description: t('interview.form.accurateData'),
 			color: 'error'
 		})
 		return
@@ -373,8 +381,11 @@ const handleSubmit = () => {
 		interviewStore.selectedPosition.jd?.trim().length > MAX_JD_LENGTH
 	) {
 		toast.add({
-			title: '请填写更加详细的岗位职责（JD）',
-			description: '以便生成更加准确的服务数据（最少 50 字）',
+			title: t('interview.form.jdError'),
+			description: t('interview.form.jdErrorDesc', {
+				min: MIN_JD_LENGTH,
+				max: MAX_JD_LENGTH
+			}),
 			color: 'error'
 		})
 		return

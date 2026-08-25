@@ -31,13 +31,16 @@
 						class="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-4 py-2 text-sm font-medium transition hover:bg-white/10"
 					>
 						<UIcon name="i-heroicons-arrow-left" />
-						返回面试汪
+						{{ $t('login.back') }}
 					</NuxtLink>
-					<div
-						class="hidden items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs md:flex"
-					>
-						<UIcon name="i-heroicons-shield-check" class="text-emerald-300" />
-						<span>微信官方授权 · 安全登录</span>
+					<div class="flex items-center gap-3">
+						<LanguageSwitcher />
+						<div
+							class="hidden items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs md:flex"
+						>
+							<UIcon name="i-heroicons-shield-check" class="text-emerald-300" />
+							<span>{{ $t('login.secure') }}</span>
+						</div>
 					</div>
 				</div>
 				<div
@@ -73,25 +76,21 @@ definePageMeta({
 	layout: 'auth'
 })
 
-useHead({
-	title: '登录面试汪 - AI 面试平台',
-	bodyAttrs: {
-		class: 'bg-neutral-900'
-	}
-})
-
-useSeoMeta({
-	title: '登录面试汪 - AI 面试平台',
-	description:
-		'通过微信扫码或微信快速登录面试汪，继续你的 AI 模拟面试训练，获取针对岗位的实时反馈与结构化评估。'
-})
-
 const toast = useToast()
+const { t } = useI18n()
+useHead(() => ({
+	title: `${t('nav.login')} - ${t('brand.name')}`,
+	bodyAttrs: { class: 'bg-neutral-900' }
+}))
+useSeoMeta(() => ({
+	title: `${t('nav.login')} - ${t('brand.name')}`,
+	description: t('seo.loginDescription')
+}))
 
 const handleQrRefresh = () => {
 	toast.add({
-		title: '二维码已更新',
-		description: '请使用微信「扫一扫」再次尝试登录。',
+		title: t('login.refreshed'),
+		description: t('login.refreshedDesc'),
 		color: 'primary'
 	})
 }
@@ -183,7 +182,8 @@ const handleQrRefresh = () => {
 	position: absolute;
 	border-radius: 9999px;
 	border: 1px solid rgba(148, 163, 184, 0.18);
-	background: linear-gradient(
+	background:
+		linear-gradient(
 			120deg,
 			rgba(226, 232, 240, 0.08),
 			rgba(148, 163, 184, 0.02),
@@ -194,10 +194,12 @@ const handleQrRefresh = () => {
 			rgba(148, 163, 184, 0.2),
 			rgba(15, 23, 42, 0.02)
 		);
-	box-shadow: 0 0 35px rgba(56, 189, 248, 0.12),
+	box-shadow:
+		0 0 35px rgba(56, 189, 248, 0.12),
 		inset 0 0 25px rgba(59, 130, 246, 0.06);
 	backdrop-filter: blur(10px);
-	animation: bubbleFloat 16s ease-in-out infinite,
+	animation:
+		bubbleFloat 16s ease-in-out infinite,
 		bubbleDrift 22s linear infinite;
 }
 

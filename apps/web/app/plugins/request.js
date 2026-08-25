@@ -1,7 +1,7 @@
 import { useUserStore } from '~/stores/user'
 import { useToast } from '#imports'
 
-export default defineNuxtPlugin(() => {
+export default defineNuxtPlugin((nuxtApp) => {
 	const config = useRuntimeConfig()
 
 	// 创建全局 ofetch 实例（同构：SSR/CSR 都可用）
@@ -18,6 +18,7 @@ export default defineNuxtPlugin(() => {
 			if (userStore.isLogin && userStore.token) {
 				headers.set('Authorization', `Bearer ${userStore.token}`)
 			}
+			headers.set('Accept-Language', nuxtApp.$i18n.locale.value)
 
 			options.headers = headers
 		},
@@ -35,16 +36,22 @@ export default defineNuxtPlugin(() => {
 				if (process.client) {
 					const toast = useToast()
 					if (body.code === 401) {
-						toast.add({ title: '登录已过期，请重新登录', color: 'warning' })
+						toast.add({
+							title: nuxtApp.$i18n.t('api.unauthorized'),
+							color: 'warning'
+						})
 						const userStore = useUserStore()
 						userStore.logout()
 					} else if (body.code === 500) {
-						toast.add({ title: body.message || '请求失败', color: 'error' })
+						toast.add({
+							title: body.message || nuxtApp.$i18n.t('api.requestFailed'),
+							color: 'error'
+						})
 					}
 				}
 				throw createError({
 					statusCode: 400,
-					statusMessage: body.message || '请求失败'
+					statusMessage: body.message || nuxtApp.$i18n.t('api.requestFailed')
 				})
 			}
 		},
@@ -56,7 +63,10 @@ export default defineNuxtPlugin(() => {
 			if (status === 401) {
 				if (process.client) {
 					const toast = useToast()
-					toast.add({ title: '登录已过期，请重新登录', color: 'warning' })
+					toast.add({
+						title: nuxtApp.$i18n.t('api.unauthorized'),
+						color: 'warning'
+					})
 					const userStore = useUserStore()
 					userStore.logout?.()
 					navigateTo({ path: '/login', replace: true })
@@ -68,7 +78,8 @@ export default defineNuxtPlugin(() => {
 			if (process.client) {
 				const toast = useToast()
 				toast.add({
-					title: response?._data?.message || '网络错误',
+					title:
+						response?._data?.message || nuxtApp.$i18n.t('api.networkError'),
 					color: 'error'
 				})
 			}

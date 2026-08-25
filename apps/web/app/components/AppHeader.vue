@@ -8,12 +8,12 @@
 		<div class="container px-4 py-3 flex items-center justify-between">
 			<div class="flex items-center gap-2">
 				<ww-svg-icon name="hero" class="h-8 w-8"></ww-svg-icon>
-				<NuxtLink to="/" class="text-xl font-semibold text-neutral-900"
-					>面试汪</NuxtLink
-				>
+				<NuxtLink to="/" class="text-xl font-semibold text-neutral-900">{{
+					$t('brand.name')
+				}}</NuxtLink>
 				<span
 					class="hidden sm:inline-block text-xs text-neutral-500 translate-y-px"
-					>押题·模拟·行测 三位一体</span
+					>{{ $t('brand.tagline') }}</span
 				>
 			</div>
 			<nav class="hidden md:flex items-center gap-6 text-sm text-neutral-600">
@@ -25,7 +25,7 @@
 							? 'text-neutral-900 font-bold'
 							: 'hover:text-neutral-900'
 					]"
-					>开启 AI 服务</NuxtLink
+					>{{ $t('nav.start') }}</NuxtLink
 				>
 				<!-- <NuxtLink
 					to="/#features"
@@ -55,7 +55,7 @@
 							? 'text-neutral-900 font-bold'
 							: 'hover:text-neutral-900'
 					]"
-					>服务记录</NuxtLink
+					>{{ $t('nav.history') }}</NuxtLink
 				>
 				<NuxtLink
 					to="/profile?tab=redeem"
@@ -65,7 +65,7 @@
 							? 'text-neutral-900 font-bold'
 							: 'hover:text-neutral-900'
 					]"
-					>兑换服务</NuxtLink
+					>{{ $t('nav.redeem') }}</NuxtLink
 				>
 				<NuxtLink
 					to="/faq"
@@ -75,7 +75,7 @@
 							? 'text-neutral-900 font-bold'
 							: 'hover:text-neutral-900'
 					]"
-					>常见问题</NuxtLink
+					>{{ $t('nav.faq') }}</NuxtLink
 				>
 				<NuxtLink
 					to="/contact"
@@ -85,12 +85,15 @@
 							? 'text-neutral-900 font-bold'
 							: 'hover:text-neutral-900'
 					]"
-					>联系我们</NuxtLink
+					>{{ $t('nav.contact') }}</NuxtLink
 				>
 			</nav>
 			<div class="flex items-center gap-2">
+				<LanguageSwitcher />
 				<template v-if="!userStore.isLogin">
-					<UButton color="gray" variant="ghost" to="/login">登录</UButton>
+					<UButton color="gray" variant="ghost" to="/login">{{
+						$t('nav.login')
+					}}</UButton>
 				</template>
 				<template v-else>
 					<UDropdownMenu
@@ -101,11 +104,11 @@
 						<UButton color="gray" variant="ghost">
 							<UAvatar
 								:src="userStore.userInfo.avatar || interviewAvatar"
-								:alt="userStore.userInfo.username || '用户头像'"
+								:alt="userStore.userInfo.username || $t('account.avatarAlt')"
 								size="lg"
 								class="cursor-pointer"
 							/>
-							{{ userStore.userInfo.username || '未命名用户' }}
+							{{ userStore.userInfo.username || $t('account.unnamed') }}
 							<UIcon name="i-heroicons-chevron-down" class="ml-1" />
 						</UButton>
 					</UDropdownMenu>
@@ -117,7 +120,7 @@
 					target="_blank"
 					rel="noopener noreferrer"
 				>
-					<span>免费制作简历（简历汪）</span>
+					<span>{{ $t('nav.resumeMaker') }}</span>
 					<UIcon
 						name="i-heroicons-arrow-top-right-on-square"
 						class="w-3.5 h-3.5"
@@ -125,21 +128,18 @@
 				</NuxtLink>
 			</div>
 		</div>
-		<UModal
-			v-model:open="confirmLogoutOpen"
-			title="是否确定退出当前账号？未保存的面试进度可能不会保留。"
-		>
+		<UModal v-model:open="confirmLogoutOpen" :title="$t('account.logoutTitle')">
 			<template #footer>
 				<div class="flex gap-2 w-full justify-end">
 					<UButton
 						color="gray"
 						variant="ghost"
 						@click="confirmLogoutOpen = false"
-						>取消</UButton
+						>{{ $t('common.cancel') }}</UButton
 					>
-					<UButton class="text-white" @click="handleConfirmLogout"
-						>确定退出</UButton
-					>
+					<UButton class="text-white" @click="handleConfirmLogout">{{
+						$t('account.confirmLogout')
+					}}</UButton>
 				</div>
 			</template>
 		</UModal>
@@ -147,33 +147,34 @@
 </template>
 
 <script setup>
-import { onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import interviewAvatar from '@/assets/imgs/interview.png'
 
 const userStore = useUserStore()
 const confirmLogoutOpen = ref(false)
+const { t } = useI18n()
 
-const userMenuItems = [
+const userMenuItems = computed(() => [
 	[
-		{ label: '个人中心', icon: 'i-heroicons-user', to: '/profile' },
+		{ label: t('nav.profile'), icon: 'i-heroicons-user', to: '/profile' },
 		{
-			label: '服务记录',
+			label: t('nav.history'),
 			icon: 'i-heroicons-chart-bar',
 			to: '/history'
 		}
 	],
 	[
 		{
-			label: '退出登录',
+			label: t('nav.logout'),
 			icon: 'i-heroicons-arrow-left-on-rectangle',
 			onSelect: () => {
 				confirmLogoutOpen.value = true
 			}
 		}
 	]
-]
+])
 
 const handleConfirmLogout = () => {
 	userStore.logout()

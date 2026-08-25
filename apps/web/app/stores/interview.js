@@ -54,7 +54,7 @@ jd: ''
 		// 记录标准答案
 		referenceAnswer: [],
 		// 面试官名称：
-		interviewerName: '正在分配面试官...',
+		interviewerName: '',
 
 		// 持久化生效的 面试链接 ID
 		resultId: null,
@@ -163,7 +163,7 @@ jd: ''
 			this.interviewStatus = 'idle'
 			this.interviewDuration = '00:00:00'
 			this.messages = []
-			this.interviewerName = '正在分配面试官...'
+			this.interviewerName = ''
 			this.interviewEventType = 'start'
 			this.sessionId = null
 			this.report = null

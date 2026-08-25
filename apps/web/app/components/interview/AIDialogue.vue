@@ -18,7 +18,11 @@
 				@click="toggleSpeech()"
 				:ui="{ rounded: 'rounded-lg' }"
 			>
-				{{ speechEnabled ? '语音播报已开启' : '语音播报已关闭' }}
+				{{
+					speechEnabled
+						? $t('interview.dialogue.speechOn')
+						: $t('interview.dialogue.speechOff')
+				}}
 			</UButton>
 		</div>
 
@@ -36,7 +40,9 @@
 						name="i-heroicons-chat-bubble-left-right"
 						class="w-16 h-16 text-gray-300 mx-auto mb-4"
 					/>
-					<p class="text-neutral-500">面试即将开始...</p>
+					<p class="text-neutral-500">
+						{{ $t('interview.dialogue.starting') }}
+					</p>
 				</div>
 			</div>
 
@@ -78,10 +84,9 @@
 							: 'bg-white border border-gray-100 text-neutral-800 rounded-tl-none'
 					]"
 				>
-					<div
-						class="whitespace-pre-wrap wrap-break-word"
-						v-html="marked.parse(message.content)"
-					></div>
+					<div class="whitespace-pre-wrap wrap-break-word">
+						{{ message.content }}
+					</div>
 					<div v-if="message.role === 'interviewer'" class="mt-2 flex">
 						<UButton
 							color="info"
@@ -91,7 +96,7 @@
 							icon="i-heroicons-light-bulb"
 							@click="showAdvice(message)"
 						>
-							参考答案
+							{{ $t('interview.dialogue.reference') }}
 						</UButton>
 					</div>
 				</div>
@@ -109,19 +114,21 @@
 				>
 					<div class="flex gap-1">
 						<div
-							class="w-2 h-2 bg-indigo-400 rounded-full animate-bounce"
+							class="w-2 h-2 bg-indigo-400 rounded-full animate-pulse"
 							style="animation-delay: 0s"
 						></div>
 						<div
-							class="w-2 h-2 bg-indigo-400 rounded-full animate-bounce"
+							class="w-2 h-2 bg-indigo-400 rounded-full animate-pulse"
 							style="animation-delay: 0.2s"
 						></div>
 						<div
-							class="w-2 h-2 bg-indigo-400 rounded-full animate-bounce"
+							class="w-2 h-2 bg-indigo-400 rounded-full animate-pulse"
 							style="animation-delay: 0.4s"
 						></div>
 					</div>
-					<span class="text-xs text-gray-400 font-medium">AI 思考中...</span>
+					<span class="text-xs text-gray-400 font-medium">{{
+						$t('interview.dialogue.thinking')
+					}}</span>
 				</div>
 			</div>
 		</div>
@@ -133,7 +140,9 @@
 					v-model="inputMessage"
 					ref="textareaRef"
 					:placeholder="
-						isInputFocused ? '请输入您的回答...' : '长按空格 语音输入'
+						isInputFocused
+							? $t('interview.dialogue.answerPlaceholder')
+							: $t('interview.dialogue.holdSpace')
 					"
 					:rows="3"
 					:maxrows="6"
@@ -159,7 +168,7 @@
 						class="text-xs text-gray-400 flex items-baseline"
 					>
 						<UIcon name="i-heroicons-microphone" class="w-4 h-4 mr-0.5" />
-						长按空格 语音输入</span
+						{{ $t('interview.dialogue.holdSpace') }}</span
 					>
 					<UButton
 						color="primary"
@@ -167,7 +176,7 @@
 						:ui="{ rounded: 'rounded-lg' }"
 						@click="handleSendMessage"
 					>
-						发送
+						{{ $t('interview.dialogue.send') }}
 						<UIcon name="i-heroicons-paper-airplane" class="w-4 h-4 ml-1" />
 					</UButton>
 				</div>
@@ -176,11 +185,12 @@
 				class="flex items-center justify-between mt-3 text-xs text-neutral-400 px-1"
 			>
 				<span class="flex items-center gap-1">
-					<UKbd size="xs">Enter</UKbd> 发送
+					<UKbd size="xs">Enter</UKbd> {{ $t('interview.dialogue.send') }}
 					<span class="mx-1">|</span>
-					<UKbd size="xs">Shift + Enter</UKbd> 换行
+					<UKbd size="xs">Shift + Enter</UKbd>
+					{{ $t('interview.dialogue.newline') }}
 					<span class="mx-1">|</span>
-					<UKbd size="xs">长按「空格」</UKbd> 语音输入
+					<UKbd size="xs">Space</UKbd> {{ $t('interview.dialogue.voiceInput') }}
 				</span>
 				<div class="flex items-center gap-3">
 					<UButton
@@ -191,7 +201,7 @@
 						icon="i-heroicons-document-text"
 						@click="handleComplete"
 					>
-						查看报告
+						{{ $t('interview.dialogue.viewReport') }}
 					</UButton>
 					<UButton
 						v-else-if="
@@ -204,7 +214,7 @@
 						icon="i-heroicons-pause"
 						@click="suspendInterview"
 					>
-						暂停面试
+						{{ $t('interview.dialogue.pause') }}
 					</UButton>
 					<UButton
 						v-else-if="interviewStore.interviewStatus === 'suspend'"
@@ -214,7 +224,7 @@
 						icon="i-heroicons-play"
 						@click="restartInterview"
 					>
-						继续面试
+						{{ $t('interview.dialogue.resume') }}
 					</UButton>
 					<UButton
 						v-if="interviewStore.interviewEventType !== 'end'"
@@ -224,7 +234,7 @@
 						icon="i-heroicons-stop-circle"
 						@click="endInterview"
 					>
-						结束面试
+						{{ $t('interview.dialogue.end') }}
 					</UButton>
 				</div>
 			</div>
@@ -251,7 +261,6 @@ import EndingProgressModal from '@/components/interview/EndingProgressModal.vue'
 import AnswerAdviceModal from '@/components/interview/AnswerAdviceModal.vue'
 import VoiceInputModal from '@/components/interview/VoiceInputModal.vue'
 import { useSpeechSynthesis } from '@/composables/useSpeechSynthesis'
-import { marked } from 'marked'
 import { navigateTo } from 'nuxt/app'
 
 const props = defineProps({
@@ -272,6 +281,7 @@ const interviewStore = useInterviewStore()
 
 const userStore = useUserStore()
 const toast = useToast()
+const { t, locale } = useI18n()
 
 const inputMessage = ref('')
 const messagesContainerRef = ref(null)
@@ -447,7 +457,8 @@ const startInterview = async () => {
 			positionName: interviewStore.selectedPosition.positionName || '',
 			minSalary: interviewStore.selectedPosition.minSalary || '',
 			maxSalary: interviewStore.selectedPosition.maxSalary || '',
-			jd: interviewStore.selectedPosition.jd || ''
+			jd: interviewStore.selectedPosition.jd || '',
+			locale: locale.value
 		}
 
 		// 获取配置
@@ -501,8 +512,8 @@ const startInterview = async () => {
 					else if (type === 'error') {
 						interviewStore.interviewEventType = 'error'
 						toast.add({
-							title: '面试出错',
-							description: content || '请稍后重试',
+							title: t('interview.dialogue.interviewError'),
+							description: content || t('profile.later'),
 							color: 'error'
 						})
 					}
@@ -511,8 +522,8 @@ const startInterview = async () => {
 					console.error('SSE Error:', error)
 					interviewStore.interviewEventType = 'error'
 					toast.add({
-						title: '面试启动失败',
-						description: error.message || '网络错误，请稍后重试',
+						title: t('interview.dialogue.startFailed'),
+						description: error.message || t('interview.flow.retryNetwork'),
 						color: 'error'
 					})
 				}
@@ -523,8 +534,8 @@ const startInterview = async () => {
 	} catch (error) {
 		interviewStore.interviewEventType = 'error'
 		toast.add({
-			title: '启动失败',
-			description: error.message || '请稍后重试',
+			title: t('interview.dialogue.genericFailed'),
+			description: error.message || t('profile.later'),
 			color: 'error'
 		})
 		interviewStore.interviewStatus = 'idle'
@@ -595,7 +606,8 @@ const handleSendMessage = async () => {
 	try {
 		const params = {
 			sessionId: interviewStore.sessionId,
-			answer: userMessage
+			answer: userMessage,
+			locale: locale.value
 		}
 
 		// 获取配置
@@ -662,12 +674,11 @@ const handleSendMessage = async () => {
 						interviewStore.interviewStatus = 'ended'
 						// 给用户一个结束面试，点击查看面试报告的提示
 						globalModal.showModal({
-							title: '恭喜！面试完成～',
-							description:
-								'点击查看面试报告（也可以在页面底部，点击「查看报告哦～」）',
+							title: t('interview.dialogue.completeTitle'),
+							description: t('interview.dialogue.completeDesc'),
 							buttons: [
 								{
-									label: '立刻查看报告',
+									label: t('interview.dialogue.viewNow'),
 									color: 'success',
 									onClick: () => {
 										handleComplete()
@@ -680,8 +691,8 @@ const handleSendMessage = async () => {
 					else if (type === 'error') {
 						interviewStore.interviewEventType = 'error'
 						toast.add({
-							title: '回答失败',
-							description: content || '请稍后重试',
+							title: t('interview.dialogue.answerFailed'),
+							description: content || t('profile.later'),
 							color: 'error'
 						})
 					}
@@ -690,8 +701,8 @@ const handleSendMessage = async () => {
 					console.error('SSE Error:', error)
 					interviewStore.interviewEventType = 'error'
 					toast.add({
-						title: '网络错误',
-						description: error.message || '请检查网络连接',
+						title: t('common.networkError'),
+						description: error.message || t('interview.dialogue.checkNetwork'),
 						color: 'error'
 					})
 				}
@@ -699,8 +710,8 @@ const handleSendMessage = async () => {
 		})
 	} catch (error) {
 		toast.add({
-			title: '发送失败',
-			description: error.message || '请稍后重试',
+			title: t('interview.dialogue.sendFailed'),
+			description: error.message || t('profile.later'),
 			color: 'error'
 		})
 		interviewStore.interviewEventType = 'waiting'
@@ -719,11 +730,11 @@ const suspendInterview = async () => {
 
 		// 给用户提示
 		globalModal.showModal({
-			title: '面试已暂停',
-			description: '可在「服务记录」查看该面试记录',
+			title: t('interview.dialogue.pausedTitle'),
+			description: t('interview.dialogue.pausedDesc'),
 			buttons: [
 				{
-					label: '继续面试',
+					label: t('interview.dialogue.resume'),
 					color: 'success',
 					onClick: () => {
 						restartInterview()
@@ -733,8 +744,8 @@ const suspendInterview = async () => {
 		})
 	} catch (error) {
 		toast.add({
-			title: '暂停面试失败',
-			description: error.message || '请稍后重试',
+			title: t('interview.dialogue.pauseFailed'),
+			description: error.message || t('profile.later'),
 			color: 'error'
 		})
 	}
@@ -753,13 +764,13 @@ const restartInterview = async () => {
 
 		// 给用户提示
 		toast.add({
-			title: '继续面试',
+			title: t('interview.dialogue.resumeSuccess'),
 			color: 'success'
 		})
 	} catch (error) {
 		toast.add({
-			title: '恢复面试失败',
-			description: error.message || '请稍后重试',
+			title: t('interview.dialogue.resumeFailed'),
+			description: error.message || t('profile.later'),
 			color: 'error'
 		})
 	}
@@ -772,30 +783,30 @@ const endInterview = () => {
 	// 先判断当前面试的状态，暂停中的面试不能结束
 	if (interviewStore.interviewStatus === 'suspend') {
 		globalModal.showModal({
-			title: '暂停中的面试不能结束',
-			description: '请先点击「继续面试」按钮'
+			title: t('interview.dialogue.suspendedCannotEnd'),
+			description: t('interview.dialogue.resumeBeforeEnd')
 		})
 		return
 	}
 
 	globalModal.showModal({
-		title: '提示',
-		description: '确定要主动结束当前面试吗？结束后将生成面试报告。',
+		title: t('interview.dialogue.confirmTitle'),
+		description: t('interview.dialogue.confirmEndDesc'),
 		buttons: [
 			{
-				label: '取消',
+				label: t('common.cancel'),
 				color: 'gray',
 				variant: 'ghost',
 				onClick: () => {}
 			},
 			{
-				label: '确定结束面试',
+				label: t('interview.dialogue.confirmEnd'),
 				color: 'error',
 				onClick: async () => {
 					try {
 						// 增加结束面试时的延迟，从而给后端 AI 生成标准答案保存到数据库的时间
 						globalModal.showModal({
-							title: '正在生成面试报告',
+							title: t('interview.dialogue.generatingReport'),
 							buttons: [],
 							preventClose: true,
 							contentComponent: EndingProgressModal,
@@ -817,8 +828,8 @@ const endInterview = () => {
 						})
 					} catch (error) {
 						toast.add({
-							title: '结束失败',
-							description: error.message || '请稍后重试',
+							title: t('interview.dialogue.endFailed'),
+							description: error.message || t('profile.later'),
 							color: 'error'
 						})
 					}
@@ -838,7 +849,7 @@ const handleComplete = () => {
 const showAdvice = (message) => {
 	const content = message?.content || ''
 	globalModal.showModal({
-		title: '回答建议',
+		title: t('interview.dialogue.advice'),
 		buttons: [],
 		preventClose: false,
 		ui: { content: 'sm:max-w-xl' },
@@ -849,10 +860,10 @@ const showAdvice = (message) => {
 
 const showVoiceModal = (autoStart = false) => {
 	globalModal.showModal({
-		title: '语音输入',
+		title: t('interview.dialogue.voiceTitle'),
 		description: autoStart
-			? '松开空格键结束输入'
-			: '请允许麦克风权限，并开始语音输入',
+			? t('interview.dialogue.releaseSpace')
+			: t('interview.dialogue.allowMic'),
 		buttons: [],
 		preventClose: false,
 		ui: { content: 'sm:max-w-xl' },

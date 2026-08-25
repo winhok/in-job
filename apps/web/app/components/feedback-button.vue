@@ -10,7 +10,7 @@
 			<svg aria-hidden="true" class="feedback-icon">
 				<use xlink:href="#icon-message" />
 			</svg>
-			<span class="feedback-text">反馈</span>
+			<span class="feedback-text">{{ $t('common.feedback') }}</span>
 		</button>
 	</div>
 </template>

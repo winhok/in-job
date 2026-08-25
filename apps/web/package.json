@@ -3,8 +3,8 @@
 	"type": "module",
 	"private": true,
 	"scripts": {
-		"build": "cp .env.production .env && nuxi build",
-		"dev": "cp .env.development .env && nuxi dev",
+		"build": "nuxi build",
+		"dev": "nuxi dev",
 		"generate": "nuxt generate",
 		"preview": "nuxt preview --port 8080",
 		"postinstall": "nuxt prepare"
@@ -12,13 +12,13 @@
 	"dependencies": {
 		"@nuxt/image": "^2.1.0",
 		"@nuxt/ui": "^4.11.0",
+		"@nuxtjs/i18n": "^10.6.0",
 		"@pinia/nuxt": "^1.0.2",
 		"ali-oss": "^6.23.0",
 		"axios": "^1.19.0",
 		"dayjs": "^1.11.23",
 		"file-saver": "^2.0.5",
 		"lightningcss": "^1.33.0",
-		"marked": "^18.0.10",
 		"nuxt": "4.5.2",
 		"pinia": "^4.0.3",
 		"pinia-plugin-persistedstate": "^4.7.1",

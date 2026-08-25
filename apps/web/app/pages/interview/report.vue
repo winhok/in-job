@@ -9,15 +9,20 @@
 					class="inline-flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-full mb-3"
 				>
 					<UIcon name="i-heroicons-check-circle" class="w-5 h-5" />
-					<span class="font-medium">评估已完成</span>
+					<span class="font-medium">{{
+						$t('interview.report.completed')
+					}}</span>
 				</div>
-				<h1 class="text-3xl font-bold text-neutral-900">面试评估报告</h1>
+				<h1 class="text-3xl font-bold text-neutral-900">
+					{{ $t('interview.report.title') }}
+				</h1>
 				<p class="text-neutral-600 mt-2 text-sm">
-					针对
-					<span class="font-semibold text-primary-600"
-						>{{ reportData.company }} - {{ reportData.position }}</span
-					>
-					岗位的详细评估
+					{{
+						$t('interview.report.subtitle', {
+							company: reportData.company,
+							position: reportData.position
+						})
+					}}
 				</p>
 			</div>
 			<div
@@ -29,7 +34,7 @@
 					icon="i-heroicons-arrow-left"
 					@click="handleBackHome"
 				>
-					返回首页
+					{{ $t('interview.report.backHome') }}
 				</UButton>
 				<UButton
 					color="info"
@@ -37,14 +42,14 @@
 					icon="i-heroicons-arrow-left-on-rectangle-solid"
 					@click="handleBackToQuestion"
 				>
-					上一步，查看详情问题
+					{{ $t('interview.report.backQuestions') }}
 				</UButton>
 				<UButton
 					color="primary"
 					icon="i-heroicons-arrow-path"
 					@click="handleRestart"
 				>
-					趁热打铁，再来一次～
+					{{ $t('interview.report.restart') }}
 				</UButton>
 			</div>
 		</div>
@@ -59,7 +64,7 @@
 					>
 						<div class="relative z-10">
 							<h2 class="text-lg font-semibold text-neutral-900 mb-6">
-								岗位匹配度
+								{{ $t('interview.report.match') }}
 							</h2>
 							<div class="flex items-baseline gap-4 mb-4">
 								<span
@@ -67,7 +72,9 @@
 								>
 									{{ reportData.matchScore }}
 								</span>
-								<span class="text-xl text-neutral-600 font-medium">分</span>
+								<span class="text-xl text-neutral-600 font-medium">{{
+									$t('interview.report.points')
+								}}</span>
 								<span
 									class="px-3 py-1 bg-primary-100 text-primary-700 rounded-full text-sm font-bold"
 								>
@@ -75,9 +82,10 @@
 								</span>
 							</div>
 							<p
-								class="text-neutral-600 leading-relaxed mb-6"
-								v-html="marked.parse(reportData.summary)"
-							></p>
+								class="text-neutral-600 leading-relaxed mb-6 whitespace-pre-wrap"
+							>
+								{{ reportData.summary }}
+							</p>
 
 							<!-- 私教训练营按钮 -->
 							<div v-if="showTrainingButton" class="mb-6">
@@ -89,7 +97,7 @@
 									@click="showTrainingModal = true"
 								>
 									<UIcon name="i-heroicons-sparkles" class="w-5 h-5" />
-									匹配度较低？获取 1v1 私教特训方案
+									{{ $t('interview.report.trainingCta') }}
 								</UButton>
 							</div>
 
@@ -100,7 +108,9 @@
 									<div class="text-2xl font-bold text-neutral-900">
 										{{ reportData.matchedSkills.length }}
 									</div>
-									<div class="text-xs text-neutral-500 mt-1">匹配技能</div>
+									<div class="text-xs text-neutral-500 mt-1">
+										{{ $t('interview.report.matchedSkills') }}
+									</div>
 								</div>
 								<div
 									class="bg-white/60 rounded-lg p-3 border border-primary-100"
@@ -108,7 +118,9 @@
 									<div class="text-2xl font-bold text-neutral-900">
 										{{ reportData.missingSkills.length }}
 									</div>
-									<div class="text-xs text-neutral-500 mt-1">缺失技能</div>
+									<div class="text-xs text-neutral-500 mt-1">
+										{{ $t('interview.report.missingSkills') }}
+									</div>
 								</div>
 								<div
 									class="bg-white/60 rounded-lg p-3 border border-primary-100"
@@ -116,7 +128,9 @@
 									<div class="text-2xl font-bold text-neutral-900">
 										{{ reportData.knowledgeGaps.length }}
 									</div>
-									<div class="text-xs text-neutral-500 mt-1">知识缺口</div>
+									<div class="text-xs text-neutral-500 mt-1">
+										{{ $t('interview.report.knowledgeGaps') }}
+									</div>
 								</div>
 							</div>
 						</div>
@@ -131,7 +145,7 @@
 						class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm flex flex-col"
 					>
 						<h2 class="text-lg font-semibold text-neutral-900 mb-4">
-							能力维度分析
+							{{ $t('interview.report.dimensions') }}
 						</h2>
 						<div class="flex-1 flex items-center justify-center min-h-[300px]">
 							<!-- SVG 雷达图 -->
@@ -151,7 +165,7 @@
 								name="i-heroicons-check-badge"
 								class="w-5 h-5 text-green-500"
 							/>
-							已具备技能
+							{{ $t('interview.report.equippedSkills') }}
 						</h2>
 						<div class="space-y-4">
 							<div
@@ -182,12 +196,12 @@
 								name="i-heroicons-exclamation-triangle"
 								class="w-5 h-5 text-amber-500"
 							/>
-							需补充技能 & 知识
+							{{ $t('interview.report.missingKnowledge') }}
 						</h2>
 						<div class="space-y-6">
 							<div>
 								<h3 class="text-sm font-medium text-neutral-700 mb-2">
-									缺失技能
+									{{ $t('interview.report.missingSkills') }}
 								</h3>
 								<div class="flex flex-wrap gap-2">
 									<span
@@ -201,7 +215,7 @@
 							</div>
 							<div>
 								<h3 class="text-sm font-medium text-neutral-700 mb-2">
-									知识缺口
+									{{ $t('interview.report.knowledgeGaps') }}
 								</h3>
 								<ul class="space-y-2">
 									<li
@@ -229,7 +243,7 @@
 							name="i-heroicons-academic-cap"
 							class="w-5 h-5 text-primary-600"
 						/>
-						建议学习路径
+						{{ $t('interview.report.learningPath') }}
 					</h2>
 					<div class="space-y-4">
 						<div
@@ -251,7 +265,11 @@
 											: 'bg-blue-100 text-blue-800'
 									"
 								>
-									{{ item.priority === 'high' ? '高优先级' : '中优先级' }}
+									{{
+										item.priority === 'high'
+											? $t('interview.report.highPriority')
+											: $t('interview.report.mediumPriority')
+									}}
 								</span>
 							</div>
 							<div class="flex-1">
@@ -273,7 +291,7 @@
 							name="i-heroicons-chat-bubble-bottom-center-text"
 							class="w-5 h-5 text-purple-600"
 						/>
-						面试准备建议
+						{{ $t('interview.report.preparationTips') }}
 					</h2>
 					<div class="grid md:grid-cols-2 gap-4">
 						<div
@@ -290,16 +308,70 @@
 						</div>
 					</div>
 				</div>
+
+				<div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+					<h2 class="text-lg font-semibold text-neutral-900 mb-2">
+						{{ $t('interview.report.helpful') }}
+					</h2>
+					<p class="text-sm text-neutral-500 mb-4">
+						{{ $t('interview.report.feedbackDesc') }}
+					</p>
+					<div class="flex flex-wrap gap-2 mb-4">
+						<UButton
+							v-for="score in 5"
+							:key="score"
+							size="sm"
+							:variant="feedbackRating === score ? 'solid' : 'outline'"
+							@click="feedbackRating = score"
+						>
+							{{ $t('interview.report.rating', { score }) }}
+						</UButton>
+						<UButton
+							size="sm"
+							:color="feedbackFair ? 'success' : 'warning'"
+							variant="soft"
+							@click="feedbackFair = !feedbackFair"
+						>
+							{{
+								feedbackFair
+									? $t('interview.report.fair')
+									: $t('interview.report.disputed')
+							}}
+						</UButton>
+					</div>
+					<UTextarea
+						v-model="feedbackComment"
+						:rows="3"
+						maxlength="1000"
+						:placeholder="$t('interview.report.feedbackPlaceholder')"
+						class="w-full mb-4"
+					/>
+					<div class="flex flex-wrap gap-3">
+						<UButton :loading="feedbackSubmitting" @click="submitFeedback">{{
+							$t('interview.report.submitFeedback')
+						}}</UButton>
+						<UButton
+							color="warning"
+							variant="outline"
+							:loading="manualReviewSubmitting"
+							@click="requestManualReview"
+						>
+							{{ $t('interview.report.manualReview') }}
+						</UButton>
+					</div>
+				</div>
 			</div>
 		</div>
 		<!-- 私教训练营弹窗 -->
-		<UModal v-model:open="showTrainingModal" title="1v1 私教训练营">
+		<UModal
+			v-model:open="showTrainingModal"
+			:title="$t('interview.report.trainingTitle')"
+		>
 			<template #body>
 				<div class="px-6 text-center space-y-6">
 					<div class="space-y-4">
 						<p class="text-neutral-600 text-sm">
-							针对您的薄弱环节，提供定制化的一对一辅导，助您快速补齐短板，拿下心仪
-							Offer！
+							{{ $t('interview.report.trainingDesc') }}
 						</p>
 						<div class="flex justify-center">
 							<div
@@ -307,15 +379,13 @@
 							>
 								<img
 									:src="sundayImg"
-									alt="私教微信"
+									:alt="$t('interview.report.coachAlt')"
 									class="w-full h-full object-cover"
 								/>
 							</div>
 						</div>
 						<p class="text-xs text-neutral-500">
-							扫码添加微信（备注：<span class="font-bold text-neutral-800"
-								>训练营</span
-							>）
+							{{ $t('interview.report.scanCoach') }}
 						</p>
 					</div>
 					<div class="pt-2">
@@ -326,7 +396,7 @@
 							block
 							size="lg"
 						>
-							查看训练营详情
+							{{ $t('interview.report.trainingDetails') }}
 							<UIcon
 								name="i-heroicons-arrow-top-right-on-square"
 								class="w-4 h-4 ml-1"
@@ -346,11 +416,14 @@ import { useHead } from 'nuxt/app'
 import { SEO } from '@/constants/seo'
 import { ref, computed } from 'vue'
 import { useToast } from '#imports'
-import { getAnalysisReportAPI } from '@/api/interview'
+import {
+	getAnalysisReportAPI,
+	submitReportFeedbackAPI,
+	requestManualReviewAPI
+} from '@/api/interview'
 import { useRoute, useRouter } from 'vue-router'
 import sundayImg from '@/assets/imgs/sunday.jpg'
 import { useGlobalModal } from '@/composables/useGlobalModal'
-import { marked } from 'marked'
 
 // 引入简单的雷达图组件（如果没有外部组件，我们可以在这里定义一个局部组件）
 import RadarChart from '@/components/interview/RadarChart.vue'
@@ -361,17 +434,12 @@ definePageMeta({
 	layout: 'interview'
 })
 
-useHead({
-	title: `面试评估报告 - ${SEO.siteName}`,
-	meta: [
-		{
-			name: 'description',
-			content: '查看 AI 面试评估报告，获取多维度分析与提升建议'
-		}
-	]
-})
-
 const { $api } = useNuxtApp()
+const { t } = useI18n()
+useHead(() => ({
+	title: `${t('interview.report.title')} - ${t('brand.name')}`,
+	meta: [{ name: 'description', content: t('seo.reportDescription') }]
+}))
 const route = useRoute()
 const router = useRouter()
 const interviewStore = useInterviewStore()
@@ -379,6 +447,11 @@ interviewStore.currentStep = 3
 const toast = useToast()
 const globalModal = useGlobalModal()
 const showTrainingModal = ref(false)
+const feedbackRating = ref(5)
+const feedbackFair = ref(true)
+const feedbackComment = ref('')
+const feedbackSubmitting = ref(false)
+const manualReviewSubmitting = ref(false)
 
 /**
  * 是否显示私教训练营按钮
@@ -400,8 +473,8 @@ const showTrainingButton = computed(() => {
 const reportData = ref({
 	resultId: '',
 	type: '',
-	company: '加载中...',
-	position: '加载中...',
+	company: t('common.loading'),
+	position: t('common.loading'),
 	salaryRange: '',
 	createdAt: '',
 	matchScore: 0,
@@ -413,7 +486,7 @@ const reportData = ref({
 	radarData: [], // 确保雷达图数据初始为空数组
 	strengths: [],
 	weaknesses: [],
-	summary: '正在加载评估报告...',
+	summary: t('interview.report.loadingReport'),
 	interviewTips: [],
 	totalQuestions: 0,
 	questionDistribution: {},
@@ -431,7 +504,7 @@ const getAnalysisReport = async () => {
 		}
 	} catch (error) {
 		toast.add({
-			title: '获取报告失败',
+			title: t('interview.report.fetchFailed'),
 			description: error.message,
 			color: 'error'
 		})
@@ -440,6 +513,38 @@ const getAnalysisReport = async () => {
 
 getAnalysisReport()
 
+const submitFeedback = async () => {
+	if (!reportData.value.resultId) return
+	feedbackSubmitting.value = true
+	try {
+		await submitReportFeedbackAPI($api, reportData.value.resultId, {
+			rating: feedbackRating.value,
+			fair: feedbackFair.value,
+			comment: feedbackComment.value || undefined
+		})
+		toast.add({ title: t('interview.report.thanks'), color: 'success' })
+	} finally {
+		feedbackSubmitting.value = false
+	}
+}
+
+const requestManualReview = async () => {
+	if (!reportData.value.resultId) return
+	manualReviewSubmitting.value = true
+	try {
+		await requestManualReviewAPI($api, reportData.value.resultId, {
+			reason: feedbackFair.value ? 'inaccurate' : 'unfair',
+			comment: feedbackComment.value || undefined
+		})
+		toast.add({
+			title: t('interview.report.reviewSubmitted'),
+			color: 'success'
+		})
+	} finally {
+		manualReviewSubmitting.value = false
+	}
+}
+
 const handleRestart = () => {
 	interviewStore.reset()
 	navigateTo('/interview/start')
@@ -447,11 +552,11 @@ const handleRestart = () => {
 
 const handleBackHome = () => {
 	globalModal.showModal({
-		title: '确定要返回首页吗？',
-		description: '返回首页后，该次记录可在「服务记录」中查看',
+		title: t('interview.report.confirmHome'),
+		description: t('interview.report.confirmHomeDesc'),
 		buttons: [
 			{
-				label: '确定',
+				label: t('common.confirm'),
 				onClick: () => {
 					navigateTo('/')
 				}

@@ -4,7 +4,9 @@
 		<div class="space-y-3">
 			<div class="flex items-center justify-between">
 				<slot name="title">
-					<h3 class="text-sm font-semibold text-neutral-900">选择已有简历</h3>
+					<h3 class="text-sm font-semibold text-neutral-900">
+						{{ $t('interview.resume.chooseExisting') }}
+					</h3>
 				</slot>
 				<UButton
 					v-if="userStore.canAddResume"
@@ -14,10 +16,10 @@
 					icon="i-heroicons-plus"
 					@click="isUploadResumeModalVisible = true"
 				>
-					上传新简历
+					{{ $t('interview.resume.uploadNew') }}
 				</UButton>
 				<span v-else class="text-sm text-gray-500">
-					最多上传 {{ MAX_RESUME_COUNT }} 份简历
+					{{ $t('interview.resume.max', { count: MAX_RESUME_COUNT }) }}
 				</span>
 			</div>
 
@@ -87,7 +89,7 @@
 				class="flex flex-col items-center justify-center py-8 text-gray-400 border-2 border-dashed border-gray-200 rounded-lg"
 			>
 				<UIcon name="i-heroicons-document-text" class="w-10 h-10 mb-2" />
-				<p class="text-sm">暂无简历</p>
+				<p class="text-sm">{{ $t('interview.resume.empty') }}</p>
 				<UButton
 					v-if="userStore.canAddResume"
 					color="primary"
@@ -96,7 +98,7 @@
 					class="mt-2"
 					@click="isUploadResumeModalVisible = true"
 				>
-					立即上传
+					{{ $t('interview.resume.uploadNow') }}
 				</UButton>
 			</div>
 		</div>
@@ -107,22 +109,26 @@
 				<div class="w-full border-t border-gray-200"></div>
 			</div>
 			<div class="relative flex justify-center text-xs">
-				<span class="bg-white px-2 text-gray-500">或</span>
+				<span class="bg-white px-2 text-gray-500">{{
+					$t('interview.resume.or')
+				}}</span>
 			</div>
 		</div>
 
 		<!-- 手动输入 -->
 		<div class="space-y-2">
-			<h3 class="text-sm font-semibold text-neutral-900">手动输入简历内容</h3>
+			<h3 class="text-sm font-semibold text-neutral-900">
+				{{ $t('interview.resume.manual') }}
+			</h3>
 			<UTextarea
 				v-model="interviewStore.resumeText"
-				placeholder="粘贴你的简历内容..."
+				:placeholder="$t('interview.resume.paste')"
 				:rows="6"
 				class="w-full"
 				@update:model-value="handleTextChange"
 			/>
 			<p class="text-xs text-gray-500">
-				支持直接粘贴简历文本内容，系统将自动解析
+				{{ $t('interview.resume.pasteHint') }}
 			</p>
 		</div>
 
@@ -147,7 +153,7 @@
 						frameborder="0"
 					/>
 					<div v-else class="p-12 text-center text-gray-500">
-						<p>无法预览此文件</p>
+						<p>{{ $t('interview.resume.cannotPreview') }}</p>
 					</div>
 				</div>
 			</template>
@@ -181,6 +187,7 @@ const userStore = useUserStore()
 const interviewStore = useInterviewStore()
 const { $api } = useNuxtApp()
 const config = useRuntimeConfig()
+const { t } = useI18n()
 
 const isUploadResumeModalVisible = ref(false)
 
@@ -233,15 +240,19 @@ const handleDelete = (index, resume) => {
 	deleteResume.value = resume
 
 	globalModal.showModal({
-		title: '确认删除',
-		description: '确定要删除这份简历吗？删除后无法恢复。',
+		title: t('interview.resume.confirmDelete'),
+		description: t('interview.resume.confirmDeleteDesc'),
 		buttons: [
 			{
-				label: '取消',
+				label: t('common.cancel'),
 				color: 'gray',
 				variant: 'ghost'
 			},
-			{ label: '确定删除', color: 'error', onClick: confirmDelete }
+			{
+				label: t('interview.resume.deleteConfirm'),
+				color: 'error',
+				onClick: confirmDelete
+			}
 		]
 	})
 }
@@ -251,7 +262,7 @@ const confirmDelete = async () => {
 	const res = await deleteResumeAPI($api, deleteResume.value.resumeId)
 	if (res) {
 		toast.add({
-			title: '删除成功',
+			title: t('profile.deleteSuccess'),
 			color: 'success'
 		})
 		userStore.resumes.splice(deleteIndex.value, 1)
@@ -279,13 +290,15 @@ const handlePreview = (resume) => {
 
 // 预览标题
 const previewTitle = computed(() => {
-	if (!previewResume.value) return '简历预览'
+	if (!previewResume.value) return t('interview.resume.preview')
 
 	if (!previewResume.value.isJianLiWang) {
 		return previewResume.value?.resumeName
 	}
 
-	return previewResume.value?.resumeName + '（支持在线修改，可同步生效）'
+	return t('interview.resume.editablePreview', {
+		name: previewResume.value?.resumeName
+	})
 })
 
 // 简历上传成功

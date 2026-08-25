@@ -1,7 +1,7 @@
 <template>
 	<UModal
 		v-model:open="isOpen"
-		title="充值享优惠"
+		:title="$t('profile.rechargeModal.title')"
 		:ui="{ content: 'max-w-[1218px]' }"
 	>
 		<template #body>
@@ -13,25 +13,28 @@
 					<div>
 						<div class="flex items-center justify-between gap-4">
 							<div>
-								<span class="text-sm text-gray-600 mr-2">当前余额</span>
+								<span class="text-sm text-gray-600 mr-2">{{
+									$t('profile.rechargeModal.balance')
+								}}</span>
 								<span class="text-2xl font-bold text-primary-600">
-									{{ userStore.userInfo.wwCoinBalance.toFixed(2) }} 旺旺币
+									{{
+										Number(userStore.userInfo?.wwCoinBalance || 0).toFixed(2)
+									}}
+									{{ $t('profile.redeemModal.coin') }}
 								</span>
 								<p class="text-xs text-gray-500 mt-1">
-									充值成功后即时到账，
+									{{ $t('profile.rechargeModal.after') }}
 									<span class="text-primary-600 font-bold text-sm"
 										>{{ REDEEM_COST }}
 									</span>
-									<!-- TODO：实现兑换功能 -->
-									旺旺币可兑换一次 {{ serviceHighlights[0].title }} /
-									{{ serviceHighlights[1].title }} /
-									{{ serviceHighlights[2].title }}
+									<!-- 兑换入口位于个人中心的旺旺币兑换弹窗 -->
+									{{ $t('profile.redeemModal.rate', { cost: REDEEM_COST }) }}
 									<span class="text-gray-500 text-xs ml-4">
-										目前可兑换
-										<span class="text-primary-600 font-bold text-sm">{{
-											redeemableCount
-										}}</span>
-										次
+										{{
+											$t('profile.rechargeModal.redeemable', {
+												count: redeemableCount
+											})
+										}}
 									</span>
 								</p>
 							</div>
@@ -45,7 +48,7 @@
 								v-model="customAmount"
 								color="success"
 								type="number"
-								placeholder="输入 1 - 10000 的整数"
+								:placeholder="$t('profile.rechargeModal.amountPlaceholder')"
 								min="1"
 								max="10000"
 								:ui="{
@@ -53,10 +56,14 @@
 								}"
 							>
 								<template #leading>
-									<span class="text-xs text-gray-500">购买</span>
+									<span class="text-xs text-gray-500">{{
+										$t('profile.rechargeModal.buy')
+									}}</span>
 								</template>
 								<template #trailing>
-									<span class="text-xs text-gray-500">旺旺币</span>
+									<span class="text-xs text-gray-500">{{
+										$t('profile.redeemModal.coin')
+									}}</span>
 								</template>
 							</UInput>
 							<UButton
@@ -64,13 +71,13 @@
 								size="xs"
 								variant="outline"
 								@click="handleCustomRecharge"
-								>确定</UButton
+								>{{ $t('common.confirm') }}</UButton
 							>
 						</div>
 						<p class="text-[11px] text-gray-500">
-							旺旺币可用于兑换 {{ serviceHighlights[0].title }} /
-							{{ serviceHighlights[1].title }} /
-							{{ serviceHighlights[2].title }} 等服务
+							{{
+								localizedServices.map((service) => service.title).join(' / ')
+							}}
 						</p>
 					</div>
 				</div>
@@ -83,11 +90,15 @@
 							<div class="flex items-center justify-between mb-2">
 								<div>
 									<p class="text-sm font-semibold text-gray-900">
-										购买套餐 / 旺旺币
+										{{ $t('profile.rechargeModal.plans') }}
 									</p>
-									<p class="text-xs text-gray-500">一次支付，解锁更多权益</p>
+									<p class="text-xs text-gray-500">
+										{{ $t('profile.rechargeModal.plansDesc') }}
+									</p>
 								</div>
-								<p class="text-xs text-gray-400">套餐权益实时生效</p>
+								<p class="text-xs text-gray-400">
+									{{ $t('profile.rechargeModal.immediate') }}
+								</p>
 							</div>
 							<!-- 套餐包列表 -->
 							<div
@@ -95,7 +106,7 @@
 							>
 								<!-- 套餐包 -->
 								<button
-									v-for="plan in rechargePlans"
+									v-for="plan in localizedRechargePlans"
 									:key="plan.id"
 									type="button"
 									class="min-w-[208px] snap-start rounded-2xl border-2 p-4 text-left transition-all hover:-translate-y-0.5"
@@ -150,7 +161,12 @@
 												name="i-heroicons-check-circle"
 												class="w-4 h-4 text-primary-500"
 											/>
-											<span>{{ perk.count }} 次 {{ perk.label }}</span>
+											<span>{{
+												$t('profile.rechargeModal.perk', {
+													count: perk.count,
+													label: perk.label
+												})
+											}}</span>
 										</li>
 									</ul>
 
@@ -158,19 +174,25 @@
 										class="flex flex-col items-start justify-between text-xs"
 									>
 										<span class="text-amber-600 font-medium">
-											原价 {{ plan.originalPrice }} 元 · 立省
-											{{ plan.saving }} 元
+											{{
+												$t('profile.rechargeModal.original', {
+													original: plan.originalPrice,
+													saving: plan.saving
+												})
+											}}
 										</span>
-										<span class="text-gray-500 mt-1"
-											>支付之后，套餐永久有效</span
-										>
+										<span class="text-gray-500 mt-1">{{
+											$t('profile.rechargeModal.permanent')
+										}}</span>
 									</div>
 									<div class="mt-3">
 										<p class="text-3xl font-bold text-gray-900">
 											¥{{ plan.price }}
 										</p>
 										<p class="text-xs text-gray-500">
-											≈ {{ plan.coins }} 旺旺币
+											{{
+												$t('profile.rechargeModal.coins', { coins: plan.coins })
+											}}
 										</p>
 									</div>
 								</button>
@@ -181,7 +203,7 @@
 							class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs text-gray-600"
 						>
 							<div
-								v-for="service in serviceHighlights"
+								v-for="service in localizedServices"
 								:key="service.title"
 								class="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 flex gap-3 items-start"
 							>
@@ -212,7 +234,7 @@
 						<div class="flex items-center justify-between">
 							<div class="flex items-center gap-2 text-sm font-medium">
 								<UButton
-									v-for="method in paymentMethods"
+									v-for="method in localizedPaymentMethods"
 									:key="method.id"
 									color="default"
 									class="px-3 py-1.5 rounded-full border text-xs transition-all"
@@ -229,12 +251,18 @@
 									</template>
 								</UButton>
 							</div>
-							<span class="text-[11px] text-gray-400">安全支付</span>
+							<span class="text-[11px] text-gray-400">{{
+								$t('profile.rechargeModal.secure')
+							}}</span>
 						</div>
 
 						<div class="text-center py-2 border rounded-2xl bg-gray-50/70">
 							<p class="text-xs text-gray-500">
-								{{ selectedPaymentInfo?.label }} 支付
+								{{
+									$t('profile.rechargeModal.payWith', {
+										method: selectedPaymentInfo?.label || ''
+									})
+								}}
 							</p>
 							<p class="text-3xl font-bold text-primary-600 mt-1">
 								¥{{ selectedPlan?.price || '--' }}
@@ -243,7 +271,11 @@
 								v-if="selectedPlan?.saving"
 								class="text-xs text-amber-600 font-medium mt-1"
 							>
-								限时立省 {{ selectedPlan.saving }} 元
+								{{
+									$t('profile.rechargeModal.saving', {
+										amount: selectedPlan.saving
+									})
+								}}
 							</p>
 						</div>
 
@@ -259,8 +291,12 @@
 									name="i-heroicons-check-circle"
 									class="w-10 h-10 text-emerald-500"
 								/>
-								<p class="text-base font-semibold">支付成功</p>
-								<p class="text-xs">权益已更新，可立即使用</p>
+								<p class="text-base font-semibold">
+									{{ $t('profile.rechargeModal.success') }}
+								</p>
+								<p class="text-xs">
+									{{ $t('profile.rechargeModal.successDesc') }}
+								</p>
 							</div>
 							<!-- Loading 状态 -->
 							<div
@@ -272,7 +308,9 @@
 										name="i-heroicons-arrow-path"
 										class="w-6 h-6 text-primary-500 animate-spin"
 									/>
-									<p class="text-xs text-gray-500">正在生成二维码...</p>
+									<p class="text-xs text-gray-500">
+										{{ $t('profile.rechargeModal.qrLoading') }}
+									</p>
 								</div>
 							</div>
 							<!-- 支付二维码 -->
@@ -280,34 +318,35 @@
 								v-else-if="order?.qrcode"
 								:src="order?.qrcode"
 								class="w-full h-full object-contain"
-								alt="支付二维码"
+								:alt="$t('profile.rechargeModal.qrAlt')"
 							/>
 							<!-- 无二维码时的占位提示 -->
 							<div
 								v-else
 								class="flex items-center justify-center h-full text-gray-400"
 							>
-								请选择套餐和支付方式
+								{{ $t('profile.rechargeModal.choosePlan') }}
 							</div>
 						</div>
 
 						<p class="text-[11px] text-gray-400 text-center">
-							支付即视为同意相关<NuxtLink
+							{{ $t('profile.rechargeModal.agreementPrefix') }}
+							<NuxtLink
 								to="/agreement"
 								target="_blank"
 								rel="noopener noreferrer"
 								class="text-primary hover:underline"
 							>
-								服务协议
+								{{ $t('legal.agreementTitle') }}
 							</NuxtLink>
-							与
+							{{ $t('login.and') }}
 							<NuxtLink
 								to="/policy"
 								target="_blank"
 								rel="noopener noreferrer"
 								class="text-primary hover:underline"
 							>
-								隐私政策
+								{{ $t('legal.privacyTitle') }}
 							</NuxtLink>
 						</p>
 					</div>
@@ -318,14 +357,13 @@
 </template>
 
 <script setup>
-import { ref, watch, computed, onUnmounted, onMounted } from 'vue'
+import { ref, watch, computed, onUnmounted } from 'vue'
 import QRCode from 'qrcode'
 import { useToast } from '#imports'
 import {
 	rechargePlans,
 	paymentMethods,
 	serviceHighlights,
-	redeemServices,
 	REDEEM_COST,
 	CUSTOM_RECHARGE_ID
 } from '@/constants/vip'
@@ -346,8 +384,68 @@ const emit = defineEmits(['update:open', 'recharge'])
 const userStore = useUserStore()
 
 const toast = useToast()
+const { t } = useI18n()
 const loading = ref(false)
 const paymentSuccess = ref(false)
+
+const localizedServices = computed(() =>
+	serviceHighlights.map((service, index) => ({
+		...service,
+		title: t(
+			index === 0
+				? 'home.services.quiz'
+				: index === 1
+					? 'home.services.special'
+					: 'home.services.behavior'
+		),
+		description: t(
+			index === 0
+				? 'home.services.quizDesc'
+				: index === 1
+					? 'home.services.specialDesc'
+					: 'home.services.behaviorDesc'
+		)
+	}))
+)
+const planCopy = {
+	single: ['planSingle', 'planSingleDesc'],
+	pro: ['planPro', 'planProDesc'],
+	max: ['planMax', 'planMaxDesc'],
+	ultra: ['planUltra', 'planUltraDesc']
+}
+const localizedRechargePlans = computed(() =>
+	rechargePlans.map((plan) => ({
+		...plan,
+		name: t(`profile.rechargeModal.${planCopy[plan.id]?.[0] || 'custom'}`),
+		description: t(
+			`profile.rechargeModal.${planCopy[plan.id]?.[1] || 'custom'}`
+		),
+		tagline: t(`profile.rechargeModal.${planCopy[plan.id]?.[1] || 'custom'}`),
+		badge: plan.badge
+			? t(
+					plan.id === 'pro'
+						? 'profile.rechargeModal.hot'
+						: 'profile.rechargeModal.value'
+				)
+			: '',
+		perks: plan.perks.map((perk) => ({
+			...perk,
+			label:
+				localizedServices.value.find((service) => service.id === perk.key)
+					?.title || perk.label
+		}))
+	}))
+)
+const localizedPaymentMethods = computed(() =>
+	paymentMethods.map((method) => ({
+		...method,
+		label: t(
+			method.id === 'wechat'
+				? 'profile.rechargeModal.wechat'
+				: 'profile.rechargeModal.alipay'
+		)
+	}))
+)
 
 // 支持自定义充值，key === custom
 const selectedPlanId = ref('pro')
@@ -366,13 +464,15 @@ const isOpen = computed({
  * @returns {Object} 当前选择的套餐对象
  */
 const selectedPlan = computed(() => {
-	const res = rechargePlans.find((plan) => plan.id === selectedPlanId.value)
+	const res = localizedRechargePlans.value.find(
+		(plan) => plan.id === selectedPlanId.value
+	)
 	if (!res) {
 		// 表示为自定义充值
 		return {
 			id: CUSTOM_RECHARGE_ID,
-			name: '自定义充值',
-			description: '自定义充值',
+			name: t('profile.rechargeModal.custom'),
+			description: t('profile.rechargeModal.custom'),
 			price: customAmount.value,
 			coins: customAmount.value,
 			originalPrice: customAmount.value,
@@ -386,7 +486,12 @@ const selectedPlan = computed(() => {
 })
 
 const selectedPaymentInfo = computed(() =>
-	paymentMethods.find((method) => method.id === selectedPayment.value)
+	localizedPaymentMethods.value.find(
+		(method) => method.id === selectedPayment.value
+	)
+)
+const redeemableCount = computed(() =>
+	Math.floor(Number(userStore.userInfo?.wwCoinBalance || 0) / REDEEM_COST)
 )
 
 // 定时查询订单状态的定时器
@@ -395,6 +500,7 @@ let interval = null
 // 监听弹窗打开，重置表单
 watch(isOpen, (open) => {
 	if (open) {
+		handleClose()
 		order.value = null
 		selectedPlanId.value = 'pro'
 		selectedPayment.value = 'wechat'
@@ -404,7 +510,7 @@ watch(isOpen, (open) => {
 		// 生成订单二维码
 		generateOrderQRCode()
 		// 定时查询订单状态
-		interval = setInterval(queryOrderStatus, 3000)
+		interval = setInterval(() => void queryOrderStatus(), 3000)
 	} else {
 		handleClose()
 	}
@@ -422,7 +528,7 @@ const handleCustomRecharge = async () => {
 	const amount = Number(customAmount.value) || 0
 	if (!amount || amount < 1 || amount > 10000) {
 		toast.add({
-			title: '请输入 1-10000 的旺旺币数量',
+			title: t('profile.rechargeModal.amountError'),
 			color: 'warning'
 		})
 		return
@@ -430,15 +536,20 @@ const handleCustomRecharge = async () => {
 
 	// 修改 selectedPlanId 为 custom
 	selectedPlanId.value = CUSTOM_RECHARGE_ID
+	await generateOrderQRCode()
 }
 
 // 订单对象
 const order = ref(null)
+let orderGeneration = 0
 // 生成订单二维码，监听 selectedPlan 变化
 const generateOrderQRCode = async () => {
+	if (!isOpen.value) return
+	const generation = ++orderGeneration
 	try {
 		loading.value = true
 		paymentSuccess.value = false
+		order.value = null
 		const req = {
 			amount: selectedPlan.value.price,
 			description: selectedPlan.value.description,
@@ -448,42 +559,54 @@ const generateOrderQRCode = async () => {
 			source: 'web'
 		}
 
-		order.value = await createOrderAPI($api, req)
+		const createdOrder = await createOrderAPI($api, req)
+		if (generation !== orderGeneration || !isOpen.value) return
+		order.value = createdOrder
 
 		// 处理订单二维码
 		const qrcode = await QRCode.toDataURL(order.value.codeUrl)
 		order.value.qrcode = qrcode
 	} catch (error) {
+		if (generation !== orderGeneration) return
 		console.error('生成订单二维码失败:', error)
 		toast.add({
-			title: '生成二维码失败，请重试',
+			title: t('profile.rechargeModal.qrFailed'),
 			color: 'error'
 		})
 		order.value = null
 	} finally {
-		loading.value = false
+		if (generation === orderGeneration) loading.value = false
 	}
 }
 
-watch(selectedPlan, generateOrderQRCode)
-watch(selectedPayment, generateOrderQRCode)
+watch([selectedPlanId, selectedPayment], () => void generateOrderQRCode())
 
 // 常见定时查询器，每 4 秒查询一次
 const queryOrderStatus = async () => {
 	if (!order.value || paymentSuccess.value) return
-	const res = await queryOrderStatusAPI($api, {
-		orderId: order.value.orderId,
-		channel: selectedPayment.value
-	})
-
-	// 用户支付成功
-	if (res.success) {
-		paymentSuccess.value = true
-		emit('recharge')
-		toast.add({
-			title: '支付成功',
-			color: 'success'
+	try {
+		const res = await queryOrderStatusAPI($api, {
+			orderId: order.value.orderId,
+			channel: selectedPayment.value
 		})
+
+		if (res.success) {
+			paymentSuccess.value = true
+			handleClose()
+			emit('recharge')
+			toast.add({
+				title: t('profile.rechargeModal.success'),
+				color: 'success'
+			})
+		} else if (res.status === 'closed' || res.status === 'failed') {
+			handleClose()
+			toast.add({
+				title: t('profile.rechargeModal.orderClosed'),
+				color: 'warning'
+			})
+		}
+	} catch (error) {
+		console.error('查询支付状态失败:', error)
 	}
 }
 
@@ -491,14 +614,12 @@ const queryOrderStatus = async () => {
  * 关闭弹窗，清除定时器
  */
 const handleClose = () => {
-	interval && clearInterval(interval)
+	orderGeneration += 1
+	if (interval) clearInterval(interval)
+	interval = null
 }
 
-// TODO：实现旺旺币充值功能
-// TODO：实现旺旺币兑换功能
-// TODO：获取消费与充值记录
-// TODO：实现微信支付
-// TODO：验证支付结果是否是全部正确的，需要从头做一次完整的测试
+onUnmounted(handleClose)
 </script>
 
 <style scoped></style>

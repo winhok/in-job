@@ -25,4 +25,5 @@ export interface InterviewSession {
   startTime: Date;
   targetDuration: number;
   isActive: boolean;
+  locale: 'zh-CN' | 'en-US';
 }

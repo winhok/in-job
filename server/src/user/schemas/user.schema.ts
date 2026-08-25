@@ -76,6 +76,15 @@ export class User {
   @Prop({ default: 0 })
   behaviorRemainingCount!: number; // 综合面试剩余次数
 
+  @Prop({ default: 0, min: 0, max: 5 })
+  resumeCount!: number; // 已保存的简历数量，用于并发限制
+
+  @Prop({ type: [String], default: [], select: false })
+  processedOrders!: string[]; // 已处理的支付或权益操作键
+
+  @Prop()
+  shareRewardClaimedAt?: Date; // 分享奖励只允许领取一次
+
   // 用户行为追踪
   @Prop()
   lastLoginTime?: Date; // 最近登录时间

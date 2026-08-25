@@ -5,8 +5,12 @@
 		<div class="container px-4 mx-auto max-w-6xl">
 			<!-- 页面标题 -->
 			<div class="mb-8">
-				<h1 class="text-2xl font-bold text-gray-900">服务记录</h1>
-				<p class="text-gray-500 text-sm mt-1">查看您的历史面试押题与评估记录</p>
+				<h1 class="text-2xl font-bold text-gray-900">
+					{{ $t('history.title') }}
+				</h1>
+				<p class="text-gray-500 text-sm mt-1">
+					{{ $t('history.description') }}
+				</p>
 			</div>
 
 			<div class="flex flex-col md:flex-row gap-6 items-start">
@@ -53,10 +57,12 @@
 					>
 						<div class="flex items-center gap-2 mb-2 opacity-90">
 							<UIcon name="i-heroicons-sparkles" class="w-4 h-4" />
-							<span class="text-xs font-medium">AI 面试助手</span>
+							<span class="text-xs font-medium">{{
+								$t('history.assistant')
+							}}</span>
 						</div>
 						<p class="text-sm opacity-90 leading-relaxed">
-							定期回顾面试记录，复盘总结是提升面试成功率的关键。
+							{{ $t('history.tip') }}
 						</p>
 					</div>
 				</div>
@@ -71,8 +77,10 @@
 							class="px-6 py-4 border-b border-gray-100 flex justify-between items-center"
 						>
 							<h2 class="font-semibold text-gray-900 flex items-center gap-2">
-								{{ currentTabLabel }}列表
-								<span class="text-gray-500 text-xs">{{ total }} 条</span>
+								{{ $t('history.list', { name: currentTabLabel }) }}
+								<span class="text-gray-500 text-xs">{{
+									$t('history.count', { count: total })
+								}}</span>
 							</h2>
 							<UButton
 								color="gray"
@@ -82,7 +90,7 @@
 								:loading="isLoading"
 								@click="loadData"
 							>
-								刷新
+								{{ $t('history.refresh') }}
 							</UButton>
 						</div>
 
@@ -97,7 +105,7 @@
 									name="i-heroicons-arrow-path"
 									class="w-8 h-8 animate-spin text-primary-500 mb-2"
 								/>
-								<p class="text-sm text-gray-500">加载数据中...</p>
+								<p class="text-sm text-gray-500">{{ $t('history.loading') }}</p>
 							</div>
 
 							<!-- 空状态 -->
@@ -113,16 +121,18 @@
 										class="w-10 h-10 text-gray-300"
 									/>
 								</div>
-								<h3 class="text-gray-900 font-medium mb-1">暂无相关记录</h3>
+								<h3 class="text-gray-900 font-medium mb-1">
+									{{ $t('history.empty') }}
+								</h3>
 								<p class="text-gray-500 text-sm mb-6">
-									您还没有进行过{{ currentTabLabel }}
+									{{ $t('history.emptyDesc', { name: currentTabLabel }) }}
 								</p>
 								<UButton
 									:to="`/interview/start`"
 									color="primary"
 									icon="i-heroicons-plus"
 								>
-									去体验服务
+									{{ $t('history.experience') }}
 								</UButton>
 							</div>
 
@@ -148,7 +158,10 @@
 												<h3
 													class="font-semibold text-gray-900 truncate group-hover:text-primary-600 transition-colors"
 												>
-													{{ record.inputData?.company || '未知公司' }}
+													{{
+														record.inputData?.company ||
+														$t('history.unknownCompany')
+													}}
 												</h3>
 												<span class="text-gray-300 hidden sm:inline">|</span>
 												<span
@@ -157,7 +170,7 @@
 													{{
 														record.inputData?.positionName ||
 														record.inputData?.position ||
-														'通用岗位'
+														$t('history.genericRole')
 													}}
 												</span>
 											</div>
@@ -168,7 +181,7 @@
 												{{
 													record.inputData?.positionName ||
 													record.inputData?.position ||
-													'通用岗位'
+													$t('history.genericRole')
 												}}
 											</div>
 
@@ -184,7 +197,7 @@
 													size="xs"
 													class="font-normal"
 												>
-													已完成
+													{{ $t('history.completed') }}
 												</UBadge>
 												<UBadge
 													v-else
@@ -193,7 +206,7 @@
 													size="xs"
 													class="font-normal"
 												>
-													处理中
+													{{ $t('history.processing') }}
 												</UBadge>
 											</div>
 										</div>
@@ -211,7 +224,7 @@
 											@click="handleView(record)"
 											class="group-hover:bg-primary-50 group-hover:text-primary-600"
 										>
-											查看报告
+											{{ $t('history.viewReport') }}
 										</UButton>
 									</div>
 								</div>
@@ -254,31 +267,30 @@ import { navigateTo } from '#imports'
 definePageMeta({
 	middleware: 'auth'
 })
+const { t } = useI18n()
 
-useHead({
-	title: '服务记录 - 面试汪'
-})
+useHead(() => ({ title: `${t('history.title')} - ${t('brand.name')}` }))
 
 const { $api } = useNuxtApp()
 
 // 标签页配置
-const tabs = [
+const tabs = computed(() => [
 	{
 		key: SERVICE_TAGS.RESUME,
-		label: '面试押题',
+		label: t('home.services.quiz'),
 		icon: 'i-heroicons-document-text'
 	},
 	{
 		key: SERVICE_TAGS.SPECIAL,
-		label: '专项面试',
+		label: t('home.services.special'),
 		icon: 'i-heroicons-light-bulb'
 	},
 	{
 		key: SERVICE_TAGS.BEHAVIOR,
-		label: '行测 + HR',
+		label: t('home.services.behavior'),
 		icon: 'i-heroicons-users'
 	}
-]
+])
 
 // 状态管理
 const activeTab = ref(SERVICE_TAGS.RESUME)
@@ -290,7 +302,7 @@ const limit = ref(10)
 
 // 当前选中的标签名称
 const currentTabLabel = computed(() => {
-	return tabs.find((t) => t.key === activeTab.value)?.label || ''
+	return tabs.value.find((tab) => tab.key === activeTab.value)?.label || ''
 })
 
 /**

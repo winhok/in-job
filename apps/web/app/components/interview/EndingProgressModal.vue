@@ -2,13 +2,17 @@
 	<div class="space-y-5">
 		<div class="flex items-center gap-2">
 			<UIcon name="i-heroicons-sparkles" class="w-5 h-5 text-indigo-600" />
-			<div class="text-sm text-neutral-700">正在生成面试报告</div>
+			<div class="text-sm text-neutral-700">
+				{{ $t('interview.ending.title') }}
+			</div>
 			<div class="ml-auto text-xs text-neutral-400">{{ percent }}%</div>
 		</div>
 
 		<UProgress :value="percent" />
 
-		<div class="text-xs text-neutral-400">预计约 7 秒完成</div>
+		<div class="text-xs text-neutral-400">
+			{{ $t('interview.ending.estimate') }}
+		</div>
 
 		<div class="grid gap-3">
 			<div
@@ -20,16 +24,16 @@
 						step > 1
 							? 'i-heroicons-check-circle'
 							: step === 1
-							? 'i-heroicons-arrow-path'
-							: 'i-heroicons-clock'
+								? 'i-heroicons-arrow-path'
+								: 'i-heroicons-clock'
 					"
 					:class="[
 						'w-5 h-5',
 						step > 1
 							? 'text-green-600'
 							: step === 1
-							? 'text-indigo-600 animate-spin'
-							: 'text-neutral-400'
+								? 'text-indigo-600 animate-spin'
+								: 'text-neutral-400'
 					]"
 				/>
 				<div
@@ -37,7 +41,7 @@
 						step >= 1 ? 'text-primary-600 font-medium' : 'text-neutral-600'
 					"
 				>
-					正在保存面试问题
+					{{ $t('interview.ending.save') }}
 				</div>
 			</div>
 
@@ -50,16 +54,16 @@
 						step > 2
 							? 'i-heroicons-check-circle'
 							: step === 2
-							? 'i-heroicons-arrow-path'
-							: 'i-heroicons-clock'
+								? 'i-heroicons-arrow-path'
+								: 'i-heroicons-clock'
 					"
 					:class="[
 						'w-5 h-5',
 						step > 2
 							? 'text-green-600'
 							: step === 2
-							? 'text-indigo-600 animate-spin'
-							: 'text-neutral-400'
+								? 'text-indigo-600 animate-spin'
+								: 'text-neutral-400'
 					]"
 				/>
 				<div
@@ -67,7 +71,7 @@
 						step >= 2 ? 'text-primary-600 font-medium' : 'text-neutral-600'
 					"
 				>
-					正在生成面试标准答案
+					{{ $t('interview.ending.answers') }}
 				</div>
 			</div>
 
@@ -80,16 +84,16 @@
 						step > 3
 							? 'i-heroicons-check-circle'
 							: step === 3
-							? 'i-heroicons-arrow-path'
-							: 'i-heroicons-clock'
+								? 'i-heroicons-arrow-path'
+								: 'i-heroicons-clock'
 					"
 					:class="[
 						'w-5 h-5',
 						step > 3
 							? 'text-green-600'
 							: step === 3
-							? 'text-indigo-600 animate-spin'
-							: 'text-neutral-400'
+								? 'text-indigo-600 animate-spin'
+								: 'text-neutral-400'
 					]"
 				/>
 				<div
@@ -97,7 +101,7 @@
 						step >= 3 ? 'text-primary-600 font-medium' : 'text-neutral-600'
 					"
 				>
-					正在准备面试结果数据
+					{{ $t('interview.ending.prepare') }}
 				</div>
 			</div>
 		</div>

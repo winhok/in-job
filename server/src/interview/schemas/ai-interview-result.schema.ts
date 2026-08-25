@@ -16,6 +16,7 @@ export class STARAnalysis {
   @Prop() result?: number;
   @Prop() overallScore?: number;
   @Prop() feedback?: string;
+  @Prop() feedbackFair?: boolean;
 }
 export const STARAnalysisSchema = SchemaFactory.createForClass(STARAnalysis);
 
@@ -123,6 +124,11 @@ export class AIInterviewResult {
   reportStatus!: 'pending' | 'generating' | 'completed' | 'failed';
   @Prop() reportGeneratedAt?: Date;
   @Prop() reportError?: string;
+  @Prop({ default: 0 }) reportAttempts!: number;
+  @Prop() lastReportAttemptAt?: Date;
+  @Prop({ index: true }) nextReportRetryAt?: Date;
+  @Prop({ index: true }) reportLeaseExpiresAt?: Date;
+  @Prop() reportLastFailureAt?: Date;
   @Prop({ default: false }) isArchived!: boolean;
   @Prop() archivedAt?: Date;
   @Prop({ default: false }) isShared!: boolean;
@@ -132,6 +138,13 @@ export class AIInterviewResult {
   @Prop({ type: SchemaTypes.Mixed }) metadata?: Record<string, unknown>;
   @Prop() aiModel?: string;
   @Prop() promptVersion?: string;
+  @Prop({
+    required: true,
+    type: String,
+    enum: ['zh-CN', 'en-US'],
+    default: 'zh-CN',
+  })
+  reportLocale!: 'zh-CN' | 'en-US';
 }
 
 export const AIInterviewResultSchema =
@@ -139,3 +152,4 @@ export const AIInterviewResultSchema =
 AIInterviewResultSchema.index({ userId: 1, interviewType: 1, createdAt: -1 });
 AIInterviewResultSchema.index({ userId: 1, overallScore: -1 });
 AIInterviewResultSchema.index({ userId: 1, status: 1, updatedAt: -1 });
+AIInterviewResultSchema.index({ reportStatus: 1, nextReportRetryAt: 1 });
